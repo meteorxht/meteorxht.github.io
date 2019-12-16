@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言有了上一篇的Dubbo消费者初始化过程的经验，接着来看生产者初始化的过程应该会简单不少，马上进入正题。 源码有了上一次找初始化入口ReferenceBean类的经验，这次很快就找到了对应的入口ServiceBean类，我们来看一下它的类结构 1public class ServiceBean&amp;lt;T&amp;gt; extends ServiceConfig&amp;lt;T&amp;gt; implements">
+<meta name="keywords" content="dubbo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dubbo生产者初始化">
+<meta property="og:url" content="http://yoursite.com/2019/07/08/dubbo3/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="前言有了上一篇的Dubbo消费者初始化过程的经验，接着来看生产者初始化的过程应该会简单不少，马上进入正题。 源码有了上一次找初始化入口ReferenceBean类的经验，这次很快就找到了对应的入口ServiceBean类，我们来看一下它的类结构 1public class ServiceBean&amp;lt;T&amp;gt; extends ServiceConfig&amp;lt;T&amp;gt; implements">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-11-04T14:19:56.019Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dubbo生产者初始化">
+<meta name="twitter:description" content="前言有了上一篇的Dubbo消费者初始化过程的经验，接着来看生产者初始化的过程应该会简单不少，马上进入正题。 源码有了上一次找初始化入口ReferenceBean类的经验，这次很快就找到了对应的入口ServiceBean类，我们来看一下它的类结构 1public class ServiceBean&amp;lt;T&amp;gt; extends ServiceConfig&amp;lt;T&amp;gt; implements">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/07/08/dubbo3/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Dubbo生产者初始化 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/08/dubbo3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dubbo生产者初始化
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-08 22:02:36" itemprop="dateCreated datePublished" datetime="2019-07-08T22:02:36+08:00">2019-07-08</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/源码解析/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2019/07/08/dubbo3/" class="leancloud_visitors" data-flag-title="Dubbo生产者初始化">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h4><p>有了上一篇的Dubbo消费者初始化过程的经验，接着来看生产者初始化的过程应该会简单不少，马上进入正题。</p>
+<h4 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h4><p>有了上一次找初始化入口<code>ReferenceBean</code>类的经验，这次很快就找到了对应的入口<code>ServiceBean</code>类，我们来看一下它的类结构</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">ServiceBean&lt;T&gt;</span> <span class="keyword">extends</span> <span class="title">ServiceConfig&lt;T&gt;</span> <span class="title">implements</span> <span class="title">InitializingBean</span>, <span class="title">DisposableBean</span>, <span class="title">ApplicationContextAware</span>, <span class="title">ApplicationListener</span>, <span class="title">BeanNameAware</span></span></span><br></pre></td></tr></table></figure>
+
+<p>是不是很熟悉，那么直接来看<code>afterPropertiesSet</code>方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> afterPropertiesSet() <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">if</span> (getProvider() == <span class="keyword">null</span>) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, ProviderConfig&gt; providerConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span>  : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (providerConfigMap != <span class="keyword">null</span> &amp;&amp; providerConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                Map&lt;<span class="keyword">String</span>, ProtocolConfig&gt; protocolConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span>  : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">                <span class="keyword">if</span> ((protocolConfigMap == <span class="keyword">null</span> || protocolConfigMap.<span class="built_in">size</span>() == <span class="number">0</span>)</span><br><span class="line">                        &amp;&amp; providerConfigMap.<span class="built_in">size</span>() &gt; <span class="number">1</span>) &#123; <span class="comment">// 兼容旧版本</span></span><br><span class="line">                    List&lt;ProviderConfig&gt; providerConfigs = <span class="keyword">new</span> ArrayList&lt;ProviderConfig&gt;();</span><br><span class="line">                    <span class="keyword">for</span> (ProviderConfig config : providerConfigMap.values()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (config.isDefault() != <span class="keyword">null</span> &amp;&amp; config.isDefault().booleanValue()) &#123;</span><br><span class="line">                            providerConfigs.<span class="built_in">add</span>(config);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (providerConfigs.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                        setProviders(providerConfigs);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    ProviderConfig providerConfig = <span class="keyword">null</span>;</span><br><span class="line">                    <span class="keyword">for</span> (ProviderConfig config : providerConfigMap.values()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (providerConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate provider configs: "</span> + providerConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                            &#125;</span><br><span class="line">                            providerConfig = config;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (providerConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        setProvider(providerConfig);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (getApplication() == <span class="keyword">null</span></span><br><span class="line">                &amp;&amp; (getProvider() == <span class="keyword">null</span> || getProvider().getApplication() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, ApplicationConfig&gt; applicationConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (applicationConfigMap != <span class="keyword">null</span> &amp;&amp; applicationConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                ApplicationConfig applicationConfig = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">for</span> (ApplicationConfig config : applicationConfigMap.values()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (applicationConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate application configs: "</span> + applicationConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                        &#125;</span><br><span class="line">                        applicationConfig = config;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (applicationConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    setApplication(applicationConfig);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (getModule() == <span class="keyword">null</span></span><br><span class="line">                &amp;&amp; (getProvider() == <span class="keyword">null</span> || getProvider().getModule() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, ModuleConfig&gt; moduleConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (moduleConfigMap != <span class="keyword">null</span> &amp;&amp; moduleConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                ModuleConfig moduleConfig = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">for</span> (ModuleConfig config : moduleConfigMap.values()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (moduleConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate module configs: "</span> + moduleConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                        &#125;</span><br><span class="line">                        moduleConfig = config;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (moduleConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    setModule(moduleConfig);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> ((getRegistries() == <span class="keyword">null</span> || getRegistries().<span class="built_in">size</span>() == <span class="number">0</span>)</span><br><span class="line">                &amp;&amp; (getProvider() == <span class="keyword">null</span> || getProvider().getRegistries() == <span class="keyword">null</span> || getProvider().getRegistries().<span class="built_in">size</span>() == <span class="number">0</span>)</span><br><span class="line">                &amp;&amp; (getApplication() == <span class="keyword">null</span> || getApplication().getRegistries() == <span class="keyword">null</span> || getApplication().getRegistries().<span class="built_in">size</span>() == <span class="number">0</span>)) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, RegistryConfig&gt; registryConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (registryConfigMap != <span class="keyword">null</span> &amp;&amp; registryConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                List&lt;RegistryConfig&gt; registryConfigs = <span class="keyword">new</span> ArrayList&lt;RegistryConfig&gt;();</span><br><span class="line">                <span class="keyword">for</span> (RegistryConfig config : registryConfigMap.values()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                        registryConfigs.<span class="built_in">add</span>(config);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (registryConfigs != <span class="keyword">null</span> &amp;&amp; registryConfigs.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">super</span>.setRegistries(registryConfigs);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (getMonitor() == <span class="keyword">null</span></span><br><span class="line">                &amp;&amp; (getProvider() == <span class="keyword">null</span> || getProvider().getMonitor() == <span class="keyword">null</span>)</span><br><span class="line">                &amp;&amp; (getApplication() == <span class="keyword">null</span> || getApplication().getMonitor() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, MonitorConfig&gt; monitorConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (monitorConfigMap != <span class="keyword">null</span> &amp;&amp; monitorConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                MonitorConfig monitorConfig = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">for</span> (MonitorConfig config : monitorConfigMap.values()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (monitorConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate monitor configs: "</span> + monitorConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                        &#125;</span><br><span class="line">                        monitorConfig = config;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (monitorConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    setMonitor(monitorConfig);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> ((getProtocols() == <span class="keyword">null</span> || getProtocols().<span class="built_in">size</span>() == <span class="number">0</span>)</span><br><span class="line">                &amp;&amp; (getProvider() == <span class="keyword">null</span> || getProvider().getProtocols() == <span class="keyword">null</span> || getProvider().getProtocols().<span class="built_in">size</span>() == <span class="number">0</span>)) &#123;</span><br><span class="line">            Map&lt;<span class="keyword">String</span>, ProtocolConfig&gt; protocolConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span>  : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (protocolConfigMap != <span class="keyword">null</span> &amp;&amp; protocolConfigMap.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                List&lt;ProtocolConfig&gt; protocolConfigs = <span class="keyword">new</span> ArrayList&lt;ProtocolConfig&gt;();</span><br><span class="line">                <span class="keyword">for</span> (ProtocolConfig config : protocolConfigMap.values()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                        protocolConfigs.<span class="built_in">add</span>(config);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (protocolConfigs != <span class="keyword">null</span> &amp;&amp; protocolConfigs.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">super</span>.setProtocols(protocolConfigs);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (getPath() == <span class="keyword">null</span> || getPath().length() == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (beanName != <span class="keyword">null</span> &amp;&amp; beanName.length() &gt; <span class="number">0</span> </span><br><span class="line">                    &amp;&amp; getInterface() != <span class="keyword">null</span> &amp;&amp; getInterface().length() &gt; <span class="number">0</span></span><br><span class="line">                    &amp;&amp; beanName.startsWith(getInterface())) &#123;</span><br><span class="line">                setPath(beanName);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (! isDelay()) &#123;</span><br><span class="line">            export();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里前面一大段都是在做初始化的准备工作，真正开始进行初始化的是最后的<code>export()</code>方法。当然，这里有一个前提就是要满足条件<code>! isDelay()</code></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> isDelay() &#123;</span><br><span class="line">    Integer <span class="built_in">delay</span> = getDelay();</span><br><span class="line">    ProviderConfig provider = getProvider();</span><br><span class="line">    <span class="built_in">if</span> (<span class="built_in">delay</span> == null &amp;&amp; provider != null) &#123;</span><br><span class="line">        <span class="built_in">delay</span> = provider.getDelay();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> supportedApplicationListener &amp;&amp; (<span class="built_in">delay</span> == null || <span class="built_in">delay</span>.intValue() == <span class="number">-1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>很明显这个方法是用来控制服务是否延迟加载的，由于初始化<code>supportedApplicationListener</code>值就为true，因此<code>delay</code>默认不配时就是开启延迟加载，也就是暂不调用<code>export()</code>方法，那么这个方法会在哪里调用呢？答案是<code>onApplicationEvent(ApplicationEvent event)</code></p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onApplicationEvent</span>(<span class="params">ApplicationEvent <span class="keyword">event</span></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (ContextRefreshedEvent.class.getName().<span class="keyword">equals</span>(<span class="keyword">event</span>.getClass().getName())) &#123;</span><br><span class="line">    	<span class="keyword">if</span> (isDelay() &amp;&amp; ! isExported() &amp;&amp; ! isUnexported()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">                logger.info(<span class="string">"The service ready on spring started. service: "</span> + getInterface());</span><br><span class="line">            &#125;</span><br><span class="line">            export();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这也是Spring中的熟面孔了，这里它监听的是<code>ContextRefreshedEvent</code>，当监听到刷新事件并满足<code>isDelay() &amp;&amp; ! isExported() &amp;&amp; ! isUnexported()</code>条件时，才正式调用<code>export()</code>方法</p>
+<figure class="highlight d"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="keyword">export</span>() &#123;</span><br><span class="line">    <span class="keyword">if</span> (provider != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">export</span> == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">export</span> = provider.getExport();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (delay == <span class="literal">null</span>) &#123;</span><br><span class="line">            delay = provider.getDelay();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">export</span> != <span class="literal">null</span> &amp;&amp; ! <span class="keyword">export</span>.booleanValue()) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (delay != <span class="literal">null</span> &amp;&amp; delay &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        Thread thread = <span class="keyword">new</span> Thread(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> run() &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(delay);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">                doExport();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        thread.setDaemon(<span class="literal">true</span>);</span><br><span class="line">        thread.setName(<span class="string">"DelayExportServiceThread"</span>);</span><br><span class="line">        thread.start();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        doExport();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里主要是启动了一个守护线程来做延迟加载，实现还是调用了<code>doExport()</code>方法</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">protected <span class="keyword">synchronized </span>void doExport() &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *   略去部分代码</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    checkApplication()<span class="comment">;</span></span><br><span class="line">    checkRegistry()<span class="comment">;</span></span><br><span class="line">    checkProtocol()<span class="comment">;</span></span><br><span class="line">    appendProperties(this)<span class="comment">;</span></span><br><span class="line">    checkStubAndMock(interfaceClass)<span class="comment">;</span></span><br><span class="line">    if (path == null <span class="title">||</span> path.length() == <span class="number">0</span>) &#123;</span><br><span class="line">        path = interfaceName<span class="comment">;</span></span><br><span class="line">    &#125;</span><br><span class="line">    doExportUrls()<span class="comment">;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>省略了一下初始化配置的代码，剩下<code>checkApplication()</code>、<code>checkRegistry()</code>和<code>checkProtocol()</code>方法都是配置项的检查，<code>appendProperties(AbstractConfig config)</code>方法上一篇消费者初始化中也分析过了就是初始化执行传入对象的set方法，这里就都不做过多分析了，重点来看一下<code>doExportUrls()</code>方法</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doExportUrls</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    List&lt;URL&gt; registryURLs = loadRegistries(<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">for</span> (ProtocolConfig protocolConfig : protocols) &#123;</span><br><span class="line">        doExportUrlsFor1Protocol(protocolConfig, registryURLs);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>loadRegistries(true)</code>方法上次也分析过了，用于获取注册中心的信息，那么继续跟<code>doExportUrlsFor1Protocol(protocolConfig, registryURLs)</code>方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List&lt;URL&gt; registryURLs) &#123;</span><br><span class="line">    <span class="keyword">String</span> name = protocolConfig.getName();</span><br><span class="line">    <span class="keyword">if</span> (name == <span class="keyword">null</span> || name.length() == <span class="number">0</span>) &#123;</span><br><span class="line">        name = <span class="string">"dubbo"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">String</span> host = protocolConfig.getHost();</span><br><span class="line">    <span class="keyword">if</span> (provider != <span class="keyword">null</span> &amp;&amp; (host == <span class="keyword">null</span> || host.length() == <span class="number">0</span>)) &#123;</span><br><span class="line">        host = provider.getHost();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">boolean</span> anyhost = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (NetUtils.isInvalidLocalHost(host)) &#123;</span><br><span class="line">        anyhost = <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            host = InetAddress.getLocalHost().getHostAddress();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnknownHostException e) &#123;</span><br><span class="line">            logger.warn(e.getMessage(), e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (NetUtils.isInvalidLocalHost(host)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (registryURLs != <span class="keyword">null</span> &amp;&amp; registryURLs.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (URL registryURL : registryURLs) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        Socket socket = <span class="keyword">new</span> Socket();</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            SocketAddress addr = <span class="keyword">new</span> InetSocketAddress(registryURL.getHost(), registryURL.getPort());</span><br><span class="line">                            socket.connect(addr, <span class="number">1000</span>);</span><br><span class="line">                            host = socket.getLocalAddress().getHostAddress();</span><br><span class="line">                            <span class="keyword">break</span>;</span><br><span class="line">                        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                            <span class="keyword">try</span> &#123;</span><br><span class="line">                                socket.close();</span><br><span class="line">                            &#125; <span class="keyword">catch</span> (Throwable e) &#123;&#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                        logger.warn(e.getMessage(), e);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (NetUtils.isInvalidLocalHost(host)) &#123;</span><br><span class="line">                host = NetUtils.getLocalHost();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="comment">//以上代码块主要作用为获取本机地址</span></span><br><span class="line"></span><br><span class="line">    Integer port = protocolConfig.getPort();</span><br><span class="line">    <span class="keyword">if</span> (provider != <span class="keyword">null</span> &amp;&amp; (port == <span class="keyword">null</span> || port == <span class="number">0</span>)) &#123;</span><br><span class="line">        port = provider.getPort();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">final</span> <span class="built_in">int</span> defaultPort = ExtensionLoader.getExtensionLoader(Protocol.class).getExtension(name).getDefaultPort();</span><br><span class="line">    <span class="keyword">if</span> (port == <span class="keyword">null</span> || port == <span class="number">0</span>) &#123;</span><br><span class="line">        port = defaultPort;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (port == <span class="keyword">null</span> || port &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        port = getRandomPort(name);</span><br><span class="line">        <span class="keyword">if</span> (port == <span class="keyword">null</span> || port &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            port = NetUtils.getAvailablePort(defaultPort);</span><br><span class="line">            putRandomPort(name, port);</span><br><span class="line">        &#125;</span><br><span class="line">        logger.warn(<span class="string">"Use random available port("</span> + port + <span class="string">") for protocol "</span> + name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Map&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; <span class="built_in">map</span> = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;();</span><br><span class="line">    <span class="keyword">if</span> (anyhost) &#123;</span><br><span class="line">        <span class="built_in">map</span>.put(Constants.ANYHOST_KEY, <span class="string">"true"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">map</span>.put(Constants.SIDE_KEY, Constants.PROVIDER_SIDE);</span><br><span class="line">    <span class="built_in">map</span>.put(Constants.DUBBO_VERSION_KEY, Version.getVersion());</span><br><span class="line">    <span class="built_in">map</span>.put(Constants.TIMESTAMP_KEY, <span class="keyword">String</span>.valueOf(System.currentTimeMillis()));</span><br><span class="line">    <span class="keyword">if</span> (ConfigUtils.getPid() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">map</span>.put(Constants.PID_KEY, <span class="keyword">String</span>.valueOf(ConfigUtils.getPid()));</span><br><span class="line">    &#125;</span><br><span class="line">    appendParameters(<span class="built_in">map</span>, application);</span><br><span class="line">    appendParameters(<span class="built_in">map</span>, module);</span><br><span class="line">    appendParameters(<span class="built_in">map</span>, provider, Constants.DEFAULT_KEY);</span><br><span class="line">    appendParameters(<span class="built_in">map</span>, protocolConfig);</span><br><span class="line">    appendParameters(<span class="built_in">map</span>, <span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">if</span> (methods != <span class="keyword">null</span> &amp;&amp; methods.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (MethodConfig method : methods) &#123;</span><br><span class="line">            appendParameters(<span class="built_in">map</span>, method, method.getName());</span><br><span class="line">            <span class="keyword">String</span> retryKey = method.getName() + <span class="string">".retry"</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">map</span>.containsKey(retryKey)) &#123;</span><br><span class="line">                <span class="keyword">String</span> retryValue = <span class="built_in">map</span>.remove(retryKey);</span><br><span class="line">                <span class="keyword">if</span> (<span class="string">"false"</span>.equals(retryValue)) &#123;</span><br><span class="line">                    <span class="built_in">map</span>.put(method.getName() + <span class="string">".retries"</span>, <span class="string">"0"</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            List&lt;ArgumentConfig&gt; arguments = method.getArguments();</span><br><span class="line">            <span class="keyword">if</span> (arguments != <span class="keyword">null</span> &amp;&amp; arguments.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (ArgumentConfig argument : arguments) &#123;</span><br><span class="line">                    <span class="comment">//类型自动转换.</span></span><br><span class="line">                    <span class="keyword">if</span>(argument.getType() != <span class="keyword">null</span> &amp;&amp; argument.getType().length() &gt;<span class="number">0</span>)&#123;</span><br><span class="line">                        Method[] methods = interfaceClass.getMethods();</span><br><span class="line">                        <span class="comment">//遍历所有方法</span></span><br><span class="line">                        <span class="keyword">if</span>(methods != <span class="keyword">null</span> &amp;&amp; methods.length &gt; <span class="number">0</span>)&#123;</span><br><span class="line">                            <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; methods.length; i++) &#123;</span><br><span class="line">                                <span class="keyword">String</span> methodName = methods[i].getName();</span><br><span class="line">                                <span class="comment">//匹配方法名称，获取方法签名.</span></span><br><span class="line">                                <span class="keyword">if</span>(methodName.equals(method.getName()))&#123;</span><br><span class="line">                                    Class&lt;?&gt;[] argtypes = methods[i].getParameterTypes();</span><br><span class="line">                                    <span class="comment">//一个方法中单个callback</span></span><br><span class="line">                                    <span class="keyword">if</span> (argument.getIndex() != <span class="number">-1</span> )&#123;</span><br><span class="line">                                        <span class="keyword">if</span> (argtypes[argument.getIndex()].getName().equals(argument.getType()))&#123;</span><br><span class="line">                                            appendParameters(<span class="built_in">map</span>, argument, method.getName() + <span class="string">"."</span> + argument.getIndex());</span><br><span class="line">                                        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                                            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"argument config error : the index attribute and type attirbute not match :index :"</span>+argument.getIndex() + <span class="string">", type:"</span> + argument.getType());</span><br><span class="line">                                        &#125;</span><br><span class="line">                                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                                        <span class="comment">//一个方法中多个callback</span></span><br><span class="line">                                        <span class="keyword">for</span> (<span class="built_in">int</span> j = <span class="number">0</span> ;j&lt;argtypes.length ;j++) &#123;</span><br><span class="line">                                            Class&lt;?&gt; argclazz = argtypes[j];</span><br><span class="line">                                            <span class="keyword">if</span> (argclazz.getName().equals(argument.getType()))&#123;</span><br><span class="line">                                                appendParameters(<span class="built_in">map</span>, argument, method.getName() + <span class="string">"."</span> + j);</span><br><span class="line">                                                <span class="keyword">if</span> (argument.getIndex() != <span class="number">-1</span> &amp;&amp; argument.getIndex() != j)&#123;</span><br><span class="line">                                                    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"argument config error : the index attribute and type attirbute not match :index :"</span>+argument.getIndex() + <span class="string">", type:"</span> + argument.getType());</span><br><span class="line">                                                &#125;</span><br><span class="line">                                            &#125;</span><br><span class="line">                                        &#125;</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(argument.getIndex() != <span class="number">-1</span>)&#123;</span><br><span class="line">                        appendParameters(<span class="built_in">map</span>, argument, method.getName() + <span class="string">"."</span> + argument.getIndex());</span><br><span class="line">                    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"argument config must set index or type attribute.eg: &lt;dubbo:argument index='0' .../&gt; or &lt;dubbo:argument type=xxx .../&gt;"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="comment">// end of methods for</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ProtocolUtils.isGeneric(generic)) &#123;</span><br><span class="line">        <span class="built_in">map</span>.put(<span class="string">"generic"</span>, generic);</span><br><span class="line">        <span class="built_in">map</span>.put(<span class="string">"methods"</span>, Constants.ANY_VALUE);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">String</span> revision = Version.getVersion(interfaceClass, version);</span><br><span class="line">        <span class="keyword">if</span> (revision != <span class="keyword">null</span> &amp;&amp; revision.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="built_in">map</span>.put(<span class="string">"revision"</span>, revision);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//获取接口中所有的方法名</span></span><br><span class="line">        <span class="keyword">String</span>[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();</span><br><span class="line">        <span class="keyword">if</span>(methods.length == <span class="number">0</span>) &#123;</span><br><span class="line">            logger.warn(<span class="string">"NO method found in service interface "</span> + interfaceClass.getName());</span><br><span class="line">            <span class="built_in">map</span>.put(<span class="string">"methods"</span>, Constants.ANY_VALUE);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">map</span>.put(<span class="string">"methods"</span>, StringUtils.<span class="built_in">join</span>(<span class="keyword">new</span> HashSet&lt;<span class="keyword">String</span>&gt;(Arrays.asList(methods)), <span class="string">","</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (! ConfigUtils.isEmpty(token)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ConfigUtils.isDefault(token)) &#123;</span><br><span class="line">            <span class="built_in">map</span>.put(<span class="string">"token"</span>, UUID.randomUUID().toString());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">map</span>.put(<span class="string">"token"</span>, token);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">"injvm"</span>.equals(protocolConfig.getName())) &#123;</span><br><span class="line">        protocolConfig.setRegister(<span class="keyword">false</span>);</span><br><span class="line">        <span class="built_in">map</span>.put(<span class="string">"notify"</span>, <span class="string">"false"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 导出服务</span></span><br><span class="line">    <span class="keyword">String</span> contextPath = protocolConfig.getContextpath();</span><br><span class="line">    <span class="keyword">if</span> ((contextPath == <span class="keyword">null</span> || contextPath.length() == <span class="number">0</span>) &amp;&amp; provider != <span class="keyword">null</span>) &#123;</span><br><span class="line">        contextPath = provider.getContextpath();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 这里的URL是com.alibaba.dubbo.common.URL 对象，最后会被处理成一个类似这样的格式（以dubbo协议为例）</span></span><br><span class="line">    <span class="comment">//dubbo://ip:port/接口名?其他信息</span></span><br><span class="line">    URL url = <span class="keyword">new</span> URL(name, host, port, (contextPath == <span class="keyword">null</span> || contextPath.length() == <span class="number">0</span> ? <span class="string">""</span> : contextPath + <span class="string">"/"</span>) + path, <span class="built_in">map</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)</span><br><span class="line">            .hasExtension(url.getProtocol())) &#123;</span><br><span class="line">        url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)</span><br><span class="line">                .getExtension(url.getProtocol()).getConfigurator(url).configure(url);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">String</span> scope = url.getParameter(Constants.SCOPE_KEY);</span><br><span class="line">    <span class="comment">//配置为none不暴露</span></span><br><span class="line">    <span class="keyword">if</span> (! Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//配置不是remote的情况下做本地暴露 (配置为remote，则表示只暴露远程服务)</span></span><br><span class="line">        <span class="keyword">if</span> (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) &#123;</span><br><span class="line">            exportLocal(url);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果配置不是local则暴露为远程服务.(配置为local，则表示只暴露远程服务)</span></span><br><span class="line">        <span class="keyword">if</span> (! Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope) )&#123;</span><br><span class="line">            <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">                logger.info(<span class="string">"Export dubbo service "</span> + interfaceClass.getName() + <span class="string">" to url "</span> + url);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (registryURLs != <span class="keyword">null</span> &amp;&amp; registryURLs.<span class="built_in">size</span>() &gt; <span class="number">0</span></span><br><span class="line">                    &amp;&amp; url.getParameter(<span class="string">"register"</span>, <span class="keyword">true</span>)) &#123;</span><br><span class="line">                <span class="keyword">for</span> (URL registryURL : registryURLs) &#123;</span><br><span class="line">                    url = url.addParameterIfAbsent(<span class="string">"dynamic"</span>, registryURL.getParameter(<span class="string">"dynamic"</span>));</span><br><span class="line">                    URL monitorUrl = loadMonitor(registryURL);</span><br><span class="line">                    <span class="keyword">if</span> (monitorUrl != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        url = url.addParameterAndEncoded(Constants.MONITOR_KEY, monitorUrl.toFullString());</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">                        logger.info(<span class="string">"Register dubbo service "</span> + interfaceClass.getName() + <span class="string">" url "</span> + url + <span class="string">" to registry "</span> + registryURL);</span><br><span class="line">                    &#125;</span><br><span class="line">                    Invoker&lt;?&gt; invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));</span><br><span class="line"></span><br><span class="line">                    Exporter&lt;?&gt; exporter = protocol.export(invoker);</span><br><span class="line">                    exporters.<span class="built_in">add</span>(exporter);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                Invoker&lt;?&gt; invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);</span><br><span class="line"></span><br><span class="line">                Exporter&lt;?&gt; exporter = protocol.export(invoker);</span><br><span class="line">                exporters.<span class="built_in">add</span>(exporter);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.urls.<span class="built_in">add</span>(url);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法比较长，在上面一些不是很重要的部分我标了一些注释，就不深入讲了，重点来看一下下面这段</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Invoker&lt;?&gt; invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));</span><br><span class="line">Exporter&lt;?&gt; exporter = protocol.<span class="builtin-name">export</span>(invoker);</span><br><span class="line">exporters.<span class="builtin-name">add</span>(exporter);</span><br></pre></td></tr></table></figure>
+
+<p><code>proxyFactory.getInvoker</code>的具体实现就不重复讲了，直接来看<code>JavassistProxyFactory</code>的<code>getInvoker</code>方法</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">public</span> &lt;<span class="type">T</span>&gt; <span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; getInvoker(<span class="type">T</span> proxy, <span class="type">Class</span>&lt;<span class="type">T</span>&gt; <span class="class"><span class="keyword">type</span>, <span class="type">URL</span> url) &#123;</span></span><br><span class="line"><span class="class">    // <span class="type">TODO</span> <span class="type">Wrapper</span>类不能正确处理带$的类名</span></span><br><span class="line"><span class="class">    <span class="title">final</span> <span class="type">Wrapper</span> <span class="title">wrapper</span> = <span class="type">Wrapper</span>.<span class="title">getWrapper</span>(<span class="title">proxy</span>.<span class="title">getClass</span>().<span class="title">getName</span>().<span class="title">indexOf</span>('$') &lt; 0 ? <span class="title">proxy</span>.<span class="title">getClass</span>() : <span class="title">type</span>);</span></span><br><span class="line"><span class="class">    <span class="title">return</span> <span class="title">new</span> <span class="type">AbstractProxyInvoker</span>&lt;<span class="type">T</span>&gt;(<span class="title">proxy</span>, <span class="title">type</span>, <span class="title">url</span>) &#123;</span></span><br><span class="line"><span class="class">        @<span class="type">Override</span></span></span><br><span class="line"><span class="class">        <span class="title">protected</span> <span class="type">Object</span> <span class="title">doInvoke</span>(<span class="type">T</span> <span class="title">proxy</span>, <span class="type">String</span> <span class="title">methodName</span>, </span></span><br><span class="line"><span class="class">                                  <span class="type">Class</span>&lt;?&gt;[] <span class="title">parameterTypes</span>, </span></span><br><span class="line"><span class="class">                                  <span class="type">Object</span>[] <span class="title">arguments</span>) <span class="title">throws</span> <span class="type">Throwable</span> &#123;</span></span><br><span class="line"><span class="class">            <span class="title">return</span> <span class="title">wrapper</span>.<span class="title">invokeMethod</span>(<span class="title">proxy</span>, <span class="title">methodName</span>, <span class="title">parameterTypes</span>, <span class="title">arguments</span>);</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到这个方法返回的是一个<code>AbstractProxyInvoker</code>的实例，通过它代理传入的<code>type</code>类。到这里就完成了具体服务到<code>Invoker</code>的转化。</p>
+<p>然后来看<code>protocol.export(invoker)</code>，同样直接来看<code>DubboProtocol</code>类的<code>export</code>方法</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">public &lt;T&gt; Exporter&lt;T&gt; <span class="keyword">export</span>(Invoker&lt;T&gt; invoker) throws <span class="title">RpcException</span> &#123;</span><br><span class="line">    URL <span class="built_in">url</span> = invoker.getUrl();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// export service.</span></span><br><span class="line">    <span class="built_in">String</span> key = serviceKey(<span class="built_in">url</span>);</span><br><span class="line">    DubboExporter&lt;T&gt; exporter = <span class="keyword">new</span> DubboExporter&lt;T&gt;(invoker, key, exporterMap);</span><br><span class="line">    exporterMap.put(key, exporter);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//export an stub service for dispaching event</span></span><br><span class="line">    <span class="built_in">Boolean</span> isStubSupportEvent = <span class="built_in">url</span>.getParameter(Constants.STUB_EVENT_KEY,Constants.DEFAULT_STUB_EVENT);</span><br><span class="line">    <span class="built_in">Boolean</span> isCallbackservice = <span class="built_in">url</span>.getParameter(Constants.IS_CALLBACK_SERVICE, <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">if</span> (isStubSupportEvent &amp;&amp; !isCallbackservice)&#123;</span><br><span class="line">        <span class="built_in">String</span> stubServiceMethods = <span class="built_in">url</span>.getParameter(Constants.STUB_EVENT_METHODS_KEY);</span><br><span class="line">        <span class="keyword">if</span> (stubServiceMethods == <span class="literal">null</span> || stubServiceMethods.length() == <span class="number">0</span> )&#123;</span><br><span class="line">            <span class="keyword">if</span> (logger.isWarnEnabled())&#123;</span><br><span class="line">                logger.warn(<span class="keyword">new</span> IllegalStateException(<span class="string">"consumer ["</span> +<span class="built_in">url</span>.getParameter(Constants.INTERFACE_KEY) +</span><br><span class="line">                        <span class="string">"], has set stubproxy support event ,but no stub methods founded."</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="title">else</span> &#123;</span><br><span class="line">            stubServiceMethodsMap.put(<span class="built_in">url</span>.getServiceKey(), stubServiceMethods);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    openServer(<span class="built_in">url</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// modified by lishen</span></span><br><span class="line">    optimizeSerialization(<span class="built_in">url</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> exporter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里可以看到返回的<code>exporter</code>其实就是对传入的<code>invoker</code>对象进行了包装。这里有一步需要注意，那就是<code>openServer(url)</code>，来看一下</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> openServer(URL url) &#123;</span><br><span class="line">    <span class="comment">// find server.</span></span><br><span class="line">    <span class="keyword">String</span> <span class="built_in">key</span> = url.getAddress();</span><br><span class="line">    <span class="comment">//client 也可以暴露一个只有server可以调用的服务。</span></span><br><span class="line">    <span class="built_in">boolean</span> isServer = url.getParameter(Constants.IS_SERVER_KEY,<span class="keyword">true</span>);</span><br><span class="line">    <span class="keyword">if</span> (isServer) &#123;</span><br><span class="line">    	ExchangeServer server = serverMap.<span class="built_in">get</span>(<span class="built_in">key</span>);</span><br><span class="line">    	<span class="keyword">if</span> (server == <span class="keyword">null</span>) &#123;</span><br><span class="line">    		serverMap.put(<span class="built_in">key</span>, createServer(url));</span><br><span class="line">    	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    		<span class="comment">//server支持reset,配合override功能使用</span></span><br><span class="line">    		server.reset(url);</span><br><span class="line">    	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要通过<code>createServer(url)</code>去创建一个服务</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">private ExchangeServer createServer(URL <span class="built_in">url</span>) &#123;</span><br><span class="line">    <span class="comment">//默认开启server关闭时发送readonly事件</span></span><br><span class="line">    <span class="built_in">url</span> = <span class="built_in">url</span>.addParameterIfAbsent(Constants.CHANNEL_READONLYEVENT_SENT_KEY, <span class="built_in">Boolean</span>.TRUE.toString());</span><br><span class="line">    <span class="comment">//默认开启heartbeat</span></span><br><span class="line">    <span class="built_in">url</span> = <span class="built_in">url</span>.addParameterIfAbsent(Constants.HEARTBEAT_KEY, <span class="built_in">String</span>.valueOf(Constants.DEFAULT_HEARTBEAT));</span><br><span class="line">    <span class="built_in">String</span> str = <span class="built_in">url</span>.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_SERVER);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (str != <span class="literal">null</span> &amp;&amp; str.length() &gt; <span class="number">0</span> &amp;&amp; ! ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str))</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RpcException(<span class="string">"Unsupported server type: "</span> + str + <span class="string">", url: "</span> + <span class="built_in">url</span>);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">url</span> = <span class="built_in">url</span>.addParameter(Constants.CODEC_KEY, Version.isCompatibleVersion() ? <span class="attribute">COMPATIBLE_CODEC_NAME</span> : DubboCodec.NAME);</span><br><span class="line">    ExchangeServer server;</span><br><span class="line">    <span class="title">try</span> &#123;</span><br><span class="line">        server = Exchangers.bind(<span class="built_in">url</span>, requestHandler);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RemotingException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RpcException(<span class="string">"Fail to start server(url: "</span> + <span class="built_in">url</span> + <span class="string">") "</span> + e.getMessage(), e);</span><br><span class="line">    &#125;</span><br><span class="line">    str = <span class="built_in">url</span>.getParameter(Constants.CLIENT_KEY);</span><br><span class="line">    <span class="keyword">if</span> (str != <span class="literal">null</span> &amp;&amp; str.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">Set</span>&lt;<span class="built_in">String</span>&gt; supportedTypes = ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions();</span><br><span class="line">        <span class="keyword">if</span> (!supportedTypes.contains(str)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RpcException(<span class="string">"Unsupported client type: "</span> + str);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> server;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>server</code>实际由<code>Exchangers.bind(url, requestHandler)</code>产生，主要作用是绑定并监听端口，默认由Netty实现。这里调用比较深也不是本篇重点，就不再深入了。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>本篇主要讲解了Dubbo生产者服务初始化的流程，简单概括起来就是将通过服务生成代理对象Invoker,并将Invoker包装成Exporter对象对外暴露，同时监听指定端口等待消费者的调用。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dubbo/" rel="tag"># dubbo</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/08/dubbo4/" rel="next" title="Dubbo消费者调用过程源码解析">
+                <i class="fa fa-chevron-left"></i> Dubbo消费者调用过程源码解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/07/08/dynamic/" rel="prev" title="JDK动态代理源码解析">
+                JDK动态代理源码解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码"><span class="nav-number">2.</span> <span class="nav-text">源码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>

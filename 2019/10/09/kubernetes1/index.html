@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="YAML模板123456789101112131415161718192021apiVersion: apps/v1kind: Deploymentmetadata:  name: nginx-deployment  labels:    app: nginxspec:  replicas: 3  selector:    matchLabels:      app: nginx  templat">
+<meta name="keywords" content="kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes学习笔记">
+<meta property="og:url" content="http://yoursite.com/2019/10/09/kubernetes1/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="YAML模板123456789101112131415161718192021apiVersion: apps/v1kind: Deploymentmetadata:  name: nginx-deployment  labels:    app: nginxspec:  replicas: 3  selector:    matchLabels:      app: nginx  templat">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-10-09T13:57:51.731Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubernetes学习笔记">
+<meta name="twitter:description" content="YAML模板123456789101112131415161718192021apiVersion: apps/v1kind: Deploymentmetadata:  name: nginx-deployment  labels:    app: nginxspec:  replicas: 3  selector:    matchLabels:      app: nginx  templat">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/10/09/kubernetes1/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Kubernetes学习笔记 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/09/kubernetes1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kubernetes学习笔记
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-09 21:56:21" itemprop="dateCreated datePublished" datetime="2019-10-09T21:56:21+08:00">2019-10-09</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/容器化/" itemprop="url" rel="index"><span itemprop="name">容器化</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2019/10/09/kubernetes1/" class="leancloud_visitors" data-flag-title="Kubernetes学习笔记">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="YAML模板"><a href="#YAML模板" class="headerlink" title="YAML模板"></a>YAML模板</h4><figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">apiVersion</span>: apps/v1</span><br><span class="line"><span class="attribute">kind</span>: Deployment</span><br><span class="line"><span class="attribute">metadata</span>:</span><br><span class="line">  <span class="attribute">name</span>: nginx-deployment</span><br><span class="line">  <span class="attribute">labels</span>:</span><br><span class="line">    <span class="attribute">app</span>: nginx</span><br><span class="line"><span class="attribute">spec</span>:</span><br><span class="line">  <span class="attribute">replicas</span>: <span class="number">3</span></span><br><span class="line">  <span class="attribute">selector</span>:</span><br><span class="line">    <span class="attribute">matchLabels</span>:</span><br><span class="line">      <span class="attribute">app</span>: nginx</span><br><span class="line">  <span class="attribute">template</span>:</span><br><span class="line">    <span class="attribute">metadata</span>:</span><br><span class="line">      <span class="attribute">labels</span>:</span><br><span class="line">        <span class="attribute">app</span>: nginx</span><br><span class="line">    <span class="attribute">spec</span>:</span><br><span class="line">      <span class="attribute">containers</span>:</span><br><span class="line">      - <span class="attribute">name</span>: nginx</span><br><span class="line">        <span class="attribute">image</span>: <span class="attribute">nginx</span>:<span class="number">1.7</span>.<span class="number">9</span></span><br><span class="line">        <span class="attribute">ports</span>:</span><br><span class="line">        - <span class="attribute">containerPort</span>: <span class="number">80</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="K8S的控制器"><a href="#K8S的控制器" class="headerlink" title="K8S的控制器"></a>K8S的控制器</h4><p>控制器的种类可以在<code>kubernetes/pkg/controller/</code>目录下查看，包括但不限于：</p>
+<ul>
+<li>deployment</li>
+<li>job</li>
+<li>podautoscaler</li>
+<li>cronjob</li>
+<li>statefulset</li>
+<li>daemon</li>
+<li>volume</li>
+<li>namespace</li>
+<li>replicaset</li>
+<li>…</li>
+</ul>
+<h4 id="常用命令："><a href="#常用命令：" class="headerlink" title="常用命令："></a>常用命令：</h4><ul>
+<li>kubectl create -f nginx-deployment.yaml</li>
+</ul>
+<p>通过yaml文件创建新的容器，不建议使用</p>
+<ul>
+<li>kubectl replace -f nginx-deployment.yaml</li>
+</ul>
+<p>通过yaml文件更新容器，比如升级一个新版本，不建议使用</p>
+<ul>
+<li>kubectl apply -f nginx-deployment.yaml</li>
+</ul>
+<p>根据yaml文件的内容变化，自动进行具体的处理，包含了create和replace的功能，建议使用</p>
+<ul>
+<li>kubectl get pods -l app=nginx</li>
+</ul>
+<p>查看pods的运行情况，在命令行中，所有 key-value 格式的参数，都使用“=”而非“:”表示。使用<code>-o yaml</code>可以输出当前实际运行的配置内容</p>
+<ul>
+<li>kubectl describe pod nginx-deployment-67594d6bf6-9gdvr</li>
+</ul>
+<p>查看pod对象的具体细节</p>
+<ul>
+<li>kubectl exec -it nginx-deployment-5c678cfb6d-lg9lw – /bin/bash</li>
+</ul>
+<p>进入到pod中</p>
+<ul>
+<li>kubectl delete -f nginx-deployment.yaml</li>
+</ul>
+<p>删除指定容器</p>
+<ul>
+<li>kubectl scale deployment nginx-deployment –replicas=4</li>
+</ul>
+<p>deployment扩缩容</p>
+<ul>
+<li>kubectl rollout status deployment/nginx-deployment</li>
+</ul>
+<p>实时查看 Deployment 对象的状态变化</p>
+<ul>
+<li>kubectl edit deployment/nginx-deployment</li>
+</ul>
+<p>更新deployment的字段，其实质是下载API对象到本地修改完后再进行提交</p>
+<ul>
+<li>kubectl set image deployment/nginx-deployment nginx=nginx:1.8.0</li>
+</ul>
+<p>直接修改deployment所使用的镜像，无需像edit一样再修改文本</p>
+<ul>
+<li>kubectl rollout undo deployment/nginx-deployment</li>
+</ul>
+<p>回滚deployment到上一个版本，<code>--to-revision=2</code>参数可以指定回滚的版本</p>
+<ul>
+<li>kubectl rollout history deployment/nginx-deployment</li>
+</ul>
+<p>查看deployment对应的变更历史，需在创建时开启<code>--record</code>参数</p>
+<ul>
+<li>kubectl rollout pause deployment/nginx-deployment</li>
+<li>kubectl rollout resume deploy/nginx-deployment</li>
+</ul>
+<p>在pause和resume之间进行的变更，只会触发一次deployment的“滚动更新”</p>
+<h4 id="Deployment与Pod的关系"><a href="#Deployment与Pod的关系" class="headerlink" title="Deployment与Pod的关系"></a>Deployment与Pod的关系</h4><p>Deployment控制ReplicaSet（版本），ReplicaSet控制Pod（副本数），因此一个ReplicaSet代表着Pod的一个版本，Pod升级的过程也就是新旧ReplicaSet交替的过程。</p>
+<h4 id="Pod中的字段定义"><a href="#Pod中的字段定义" class="headerlink" title="Pod中的字段定义"></a>Pod中的字段定义</h4><ul>
+<li>NodeSelector：是一个供用户将 Pod 与 Node 进行绑定的字段</li>
+<li>NodeName：一旦 Pod 的这个字段被赋值，Kubernetes项目就会认为这个Pod已经经过了调度，调度的结果就是赋值的节点名字。所以，这个字段一般由调度器负责设置，但用户也可以设置它来“骗过”调度器，当然这个做法一般是在测试或者调试的时候才会用到。</li>
+<li>HostAliases：定义了 Pod 的 hosts 文件（比如 /etc/hosts）里的内容</li>
+</ul>
+<h4 id="Pod状态"><a href="#Pod状态" class="headerlink" title="Pod状态"></a>Pod状态</h4><ol>
+<li><p>Pending：这个状态意味着，Pod 的 YAML 文件已经提交给了 Kubernetes，API 对象已经被创建并保存在 Etcd 当中。但是，这个 Pod里有些容器因为某种原因而不能被顺利创建。比如，调度不成功。</p>
+</li>
+<li><p>Running：这个状态下，Pod 已经调度成功，跟一个具体的节点绑定。它包含的容器都已经创建成功，并且至少有一个正在运行中。</p>
+</li>
+<li><p>Succeeded：这个状态意味着，Pod 里的所有容器都正常运行完毕，并且已经退出了。这种情况在运行一次性任务时最为常见。</p>
+</li>
+<li><p>Failed：这个状态下，Pod 里至少有一个容器以不正常的状态（非 0 的返回码）退出。这个状态的出现，意味着你得想办法 Debug 这个容器的应用，比如查看 Pod 的 Events 和日志。</p>
+</li>
+<li><p>Unknown：这是一个异常状态，意味着 Pod 的状态不能持续地被 kubelet 汇报给 kube-apiserver，这很有可能是主从节点（Master 和 Kubelet）间的通信出现了问题。</p>
+</li>
+</ol>
+<p>pod的Conditions值包括：PodScheduled、Ready、Initialized，以及 Unschedulable。</p>
+<h4 id="Projected-Volume"><a href="#Projected-Volume" class="headerlink" title="Projected Volume"></a>Projected Volume</h4><h5 id="1-Secret"><a href="#1-Secret" class="headerlink" title="1. Secret"></a>1. Secret</h5><p>把Pod想要访问的加密数据，存放到Etcd中</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">apiVersion</span>: v1</span><br><span class="line"><span class="attribute">kind</span>: Pod</span><br><span class="line"><span class="attribute">metadata</span>:</span><br><span class="line">  <span class="attribute">name</span>: test-projected-volume </span><br><span class="line"><span class="attribute">spec</span>:</span><br><span class="line">  <span class="attribute">containers</span>:</span><br><span class="line">  - <span class="attribute">name</span>: test-secret-volume</span><br><span class="line">    <span class="attribute">image</span>: busybox</span><br><span class="line">    <span class="attribute">args</span>:</span><br><span class="line">    - sleep</span><br><span class="line">    - <span class="string">"86400"</span></span><br><span class="line">    <span class="attribute">volumeMounts</span>:</span><br><span class="line">    - <span class="attribute">name</span>: mysql-cred</span><br><span class="line">      <span class="attribute">mountPath</span>: <span class="string">"/projected-volume"</span></span><br><span class="line">      <span class="attribute">readOnly</span>: true</span><br><span class="line">  <span class="attribute">volumes</span>:</span><br><span class="line">  - <span class="attribute">name</span>: mysql-cred</span><br><span class="line">    <span class="attribute">projected</span>:</span><br><span class="line">      <span class="attribute">sources</span>:</span><br><span class="line">      - <span class="attribute">secret</span>:</span><br><span class="line">          <span class="attribute">name</span>: user</span><br><span class="line">      - <span class="attribute">secret</span>:</span><br><span class="line">          <span class="attribute">name</span>: pass</span><br></pre></td></tr></table></figure>
+
+<p>创建secret可使用如下操作</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ cat ./username.txt</span><br><span class="line">admin</span><br><span class="line">$ cat ./password.txt</span><br><span class="line">c1oudc0w!</span><br><span class="line"></span><br><span class="line">$ kubectl create<span class="built_in"> secret </span>generic<span class="built_in"> user </span><span class="attribute">--from-file</span>=./username.txt</span><br><span class="line">$ kubectl create<span class="built_in"> secret </span>generic pass <span class="attribute">--from-file</span>=./password.txt</span><br></pre></td></tr></table></figure>
+
+<p>或者直接写在YAML中</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: mysecret</span><br><span class="line">type: Opaque</span><br><span class="line">data:</span><br><span class="line">  user: YWRtaW4=</span><br><span class="line">  pass: MWYyZDFlMmU2N2Rm</span><br></pre></td></tr></table></figure>
+
+<p>这里的user和pass都必须经过Base64转码，如</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">echo -n 'admin' <span class="string">| base64</span></span><br><span class="line">YWRtaW4=</span><br><span class="line">$ echo -n '1f2d1e2e67df' <span class="string">| base64</span></span><br><span class="line">MWYyZDFlMmU2N2Rm</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-ConfigMap"><a href="#2-ConfigMap" class="headerlink" title="2. ConfigMap"></a>2. ConfigMap</h5><p>用法与secret几乎一致，区别是ConfigMap存储的内容应该是不需要加密的</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># .properties 文件的内容</span></span><br><span class="line">$ cat example/ui.properties</span><br><span class="line">color.<span class="attribute">good</span>=purple</span><br><span class="line">color.<span class="attribute">bad</span>=yellow</span><br><span class="line">allow.<span class="attribute">textmode</span>=<span class="literal">true</span></span><br><span class="line">how.nice.<span class="keyword">to</span>.<span class="attribute">look</span>=fairlyNice</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从.properties文件创建ConfigMap</span></span><br><span class="line">$ kubectl create configmap ui-config <span class="attribute">--from-file</span>=example/ui.properties</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看这个 ConfigMap 里保存的信息 (data)</span></span><br><span class="line">$ kubectl <span class="builtin-name">get</span> configmaps ui-config -o yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">data:</span><br><span class="line">  ui.properties: |</span><br><span class="line">    color.<span class="attribute">good</span>=purple</span><br><span class="line">    color.<span class="attribute">bad</span>=yellow</span><br><span class="line">    allow.<span class="attribute">textmode</span>=<span class="literal">true</span></span><br><span class="line">    how.nice.<span class="keyword">to</span>.<span class="attribute">look</span>=fairlyNice</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: ui-config</span><br><span class="line">  <span class="built_in">..</span>.</span><br></pre></td></tr></table></figure>
+
+<p>可以直接通过配置文件生成ConfigMap</p>
+<h5 id="3-Downward-API"><a href="#3-Downward-API" class="headerlink" title="3. Downward API"></a>3. Downward API</h5><p>可用于打印一些容器相关的静态信息，如</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>. 使用 fieldRef 可以声明使用:</span><br><span class="line">spec<span class="selector-class">.nodeName</span> - 宿主机名字</span><br><span class="line">status<span class="selector-class">.hostIP</span> - 宿主机 IP</span><br><span class="line">metadata<span class="selector-class">.name</span> - Pod 的名字</span><br><span class="line">metadata<span class="selector-class">.namespace</span> - Pod 的 Namespace</span><br><span class="line">status<span class="selector-class">.podIP</span> - Pod 的 IP</span><br><span class="line">spec<span class="selector-class">.serviceAccountName</span> - Pod 的 Service Account 的名字</span><br><span class="line">metadata<span class="selector-class">.uid</span> - Pod 的 UID</span><br><span class="line">metadata<span class="selector-class">.labels</span>[<span class="string">'&lt;KEY&gt;'</span>] - 指定 &lt;KEY&gt; 的 Label 值</span><br><span class="line">metadata<span class="selector-class">.annotations</span>[<span class="string">'&lt;KEY&gt;'</span>] - 指定 &lt;KEY&gt; 的 Annotation 值</span><br><span class="line">metadata<span class="selector-class">.labels</span> - Pod 的所有 Label</span><br><span class="line">metadata<span class="selector-class">.annotations</span> - Pod 的所有 Annotation</span><br><span class="line"></span><br><span class="line"><span class="number">2</span>. 使用 resourceFieldRef 可以声明使用:</span><br><span class="line">容器的 CPU limit</span><br><span class="line">容器的 CPU request</span><br><span class="line">容器的 memory limit</span><br><span class="line">容器的 memory request</span><br></pre></td></tr></table></figure>
+
+<p>具体用法如下</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">test-downwardapi-volume</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    zone:</span> <span class="string">us-est-coast</span></span><br><span class="line"><span class="attr">    cluster:</span> <span class="string">test-cluster1</span></span><br><span class="line"><span class="attr">    rack:</span> <span class="string">rack-22</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  containers:</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">client-container</span></span><br><span class="line"><span class="attr">      image:</span> <span class="string">k8s.gcr.io/busybox</span></span><br><span class="line"><span class="attr">      command:</span> <span class="string">["sh",</span> <span class="string">"-c"</span><span class="string">]</span></span><br><span class="line"><span class="attr">      args:</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">while</span> <span class="literal">true</span><span class="string">;</span> <span class="string">do</span></span><br><span class="line">          <span class="string">if</span> <span class="string">[[</span> <span class="bullet">-e</span> <span class="string">/etc/podinfo/labels</span> <span class="string">]];</span> <span class="string">then</span></span><br><span class="line">            <span class="string">echo</span> <span class="bullet">-en</span> <span class="string">'\n\n'</span><span class="string">;</span> <span class="string">cat</span> <span class="string">/etc/podinfo/labels;</span> <span class="string">fi;</span></span><br><span class="line">          <span class="string">sleep</span> <span class="number">5</span><span class="string">;</span></span><br><span class="line">        <span class="string">done;</span></span><br><span class="line"><span class="attr">      volumeMounts:</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">podinfo</span></span><br><span class="line"><span class="attr">          mountPath:</span> <span class="string">/etc/podinfo</span></span><br><span class="line"><span class="attr">          readOnly:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">  volumes:</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">podinfo</span></span><br><span class="line"><span class="attr">      projected:</span></span><br><span class="line"><span class="attr">        sources:</span></span><br><span class="line"><span class="attr">        - downwardAPI:</span></span><br><span class="line"><span class="attr">            items:</span></span><br><span class="line"><span class="attr">              - path:</span> <span class="string">"labels"</span></span><br><span class="line"><span class="attr">                fieldRef:</span></span><br><span class="line"><span class="attr">                  fieldPath:</span> <span class="string">metadata.labels</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f dapi-volume.yaml</span><br><span class="line">$ kubectl logs test-downwardapi-volume</span><br><span class="line">cluster=<span class="string">"test-cluster1"</span></span><br><span class="line">rack=<span class="string">"rack-22"</span></span><br><span class="line">zone=<span class="string">"us-est-coast"</span></span><br></pre></td></tr></table></figure>
+
+<p>容器启动后可通过logs查看输出信息</p>
+<h5 id="4-ServiceAccountToken"><a href="#4-ServiceAccountToken" class="headerlink" title="4. ServiceAccountToken"></a>4. ServiceAccountToken</h5><p>这是一种特殊的secret，用于进行权限分配。</p>
+<p>为了方便使用，Kubernetes提供了一个默认“服务账户”（default Service Account）。任何一个运行在Kubernetes里的Pod，都可以直接使用这个默认的 Service Account，而无需显示地声明挂载它。</p>
+<h4 id="健康检查livenessProbe"><a href="#健康检查livenessProbe" class="headerlink" title="健康检查livenessProbe"></a>健康检查livenessProbe</h4><ol>
+<li>通过命令检查</li>
+</ol>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">apiVersion:</span> v1</span><br><span class="line"><span class="symbol">kind:</span> Pod</span><br><span class="line"><span class="symbol">metadata:</span></span><br><span class="line"><span class="symbol">  labels:</span></span><br><span class="line"><span class="symbol">    test:</span> liveness</span><br><span class="line"><span class="symbol">  name:</span> test-liveness-exec</span><br><span class="line"><span class="symbol">spec:</span></span><br><span class="line"><span class="symbol">  containers:</span></span><br><span class="line">  - name: liveness</span><br><span class="line"><span class="symbol">    image:</span> busybox</span><br><span class="line"><span class="symbol">    args:</span></span><br><span class="line">    - <span class="meta-keyword">/bin/</span>sh</span><br><span class="line">    - -c</span><br><span class="line">    - touch <span class="meta-keyword">/tmp/</span>healthy; sleep <span class="number">30</span>; rm -rf <span class="meta-keyword">/tmp/</span>healthy; sleep <span class="number">600</span></span><br><span class="line"><span class="symbol">    livenessProbe:</span></span><br><span class="line"><span class="symbol">      exec:</span></span><br><span class="line"><span class="symbol">        command:</span></span><br><span class="line">        - cat</span><br><span class="line">        - <span class="meta-keyword">/tmp/</span>healthy</span><br><span class="line"><span class="symbol">      initialDelaySeconds:</span> <span class="number">5</span></span><br><span class="line"><span class="symbol">      periodSeconds:</span> <span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>通过http接口检查</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line"><span class="attr">livenessProbe:</span></span><br><span class="line"><span class="attr">     httpGet:</span></span><br><span class="line"><span class="attr">       path:</span> <span class="string">/healthz</span></span><br><span class="line"><span class="attr">       port:</span> <span class="number">8080</span></span><br><span class="line"><span class="attr">       httpHeaders:</span></span><br><span class="line"><span class="attr">       - name:</span> <span class="string">X-Custom-Header</span></span><br><span class="line"><span class="attr">         value:</span> <span class="string">Awesome</span></span><br><span class="line"><span class="attr">       initialDelaySeconds:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">       periodSeconds:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>通过tcp检查端口 </li>
+</ol>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="symbol">livenessProbe:</span></span><br><span class="line"><span class="symbol">  tcpSocket:</span></span><br><span class="line"><span class="symbol">    port:</span> <span class="number">8080</span></span><br><span class="line"><span class="symbol">  initialDelaySeconds:</span> <span class="number">15</span></span><br><span class="line"><span class="symbol">  periodSeconds:</span> <span class="number">20</span></span><br></pre></td></tr></table></figure>
+
+<p>健康检查失败时，会触发Kubernetes里的Pod恢复机制，也叫restartPolicy，该字段有三种定义，分别是：</p>
+<ul>
+<li>Always：在任何情况下，只要容器不在运行状态，就自动重启容器；</li>
+<li>OnFailure: 只在容器 异常时才自动重启容器；</li>
+<li>Never: 从来不重启容器。</li>
+</ul>
+<p>一般默认使用的是Always，值得一提的是，这里的重启其实是创建新的容器，但这个pod永远会在同一个Node（宿主机）上，除非绑定关系发生了变化（pod.spec.node字段被修改）。或者也可以通过Deployment来管理pod。</p>
+<h4 id="service"><a href="#service" class="headerlink" title="service"></a>service</h4><p>service有以下类型，分别是ClusterIP（默认）、NodePort、LoadBalancer和ExternalName</p>
+<p>可以通过kubectl get endpoints 查看所有service对应的endpoints，这里的endpoints即是service对应的pod列表</p>
+<h5 id="service的访问机制"><a href="#service的访问机制" class="headerlink" title="service的访问机制"></a>service的访问机制</h5><ol>
+<li>通过service的虚拟IP的方式访问</li>
+<li>通过service的DNS方式，格式为<servicename>.<namespace>.svc.cluster.local，该方式只暴露一条pod记录</namespace></servicename></li>
+<li>通过headless service方式访问，该情况下clusterIP 字段的值是：None，该service不会被分配VIP，而是以DNS解析记录的方式暴露所有对应的pod信息，格式为<podname>.<servicename>.<namesapce>.svc.cluster.local</namesapce></servicename></podname></li>
+</ol>
+<p>service的DNS记录检查可以通过创建一个临时busybox的pod</p>
+<blockquote>
+<p>kubectl run -i –tty –image busybox:1.28.4 dns-test –restart=Never –rm /bin/sh</p>
+</blockquote>
+<p>该pod为临时pod，退出后即被销毁，在其内部通过nslookup指令可以解析对应域名</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">/ # nslookup  nginx-service</span><br><span class="line">Server:    10.43.0.10</span><br><span class="line">Address 1: 10.43.0.10 kube-dns.kube-system.svc.cluster.local</span><br><span class="line"></span><br><span class="line">Name:      nginx-service</span><br><span class="line">Address 1: 10.43.84.254 nginx-service.hmall.svc.cluster.local</span><br></pre></td></tr></table></figure>
+
+<p>注：当在同一namespace下时，可以直接通过<servicename>访问，否则需要<servicename>.<namespace>形式访问</namespace></servicename></servicename></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kubernetes/" rel="tag"># kubernetes</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/24/docker1/" rel="next" title="Docker学习笔记">
+                <i class="fa fa-chevron-left"></i> Docker学习笔记
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/17/ingress/" rel="prev" title="Ingress使用笔记">
+                Ingress使用笔记 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#YAML模板"><span class="nav-number">1.</span> <span class="nav-text">YAML模板</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#K8S的控制器"><span class="nav-number">2.</span> <span class="nav-text">K8S的控制器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#常用命令："><span class="nav-number">3.</span> <span class="nav-text">常用命令：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Deployment与Pod的关系"><span class="nav-number">4.</span> <span class="nav-text">Deployment与Pod的关系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pod中的字段定义"><span class="nav-number">5.</span> <span class="nav-text">Pod中的字段定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pod状态"><span class="nav-number">6.</span> <span class="nav-text">Pod状态</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Projected-Volume"><span class="nav-number">7.</span> <span class="nav-text">Projected Volume</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-Secret"><span class="nav-number">7.1.</span> <span class="nav-text">1. Secret</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-ConfigMap"><span class="nav-number">7.2.</span> <span class="nav-text">2. ConfigMap</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-Downward-API"><span class="nav-number">7.3.</span> <span class="nav-text">3. Downward API</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-ServiceAccountToken"><span class="nav-number">7.4.</span> <span class="nav-text">4. ServiceAccountToken</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#健康检查livenessProbe"><span class="nav-number">8.</span> <span class="nav-text">健康检查livenessProbe</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#service"><span class="nav-number">9.</span> <span class="nav-text">service</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#service的访问机制"><span class="nav-number">9.1.</span> <span class="nav-text">service的访问机制</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>

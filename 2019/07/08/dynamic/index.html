@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="0.前言在好多框架源码中接触过动态代理，也发现动态有好多种不同的实现，但就是这么常见的特性我居然没有深入解析过，那么知耻而后勇的我即将把这块空缺补上。这里将根据一段简单的demo来讲解最常见的jdk中的动态代理。 1.示例做为demo入口的main实现如下 12345678910public static void main(String[] args) &amp;#123;    ConcreteCla">
+<meta name="keywords" content="jdk,动态代理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JDK动态代理源码解析">
+<meta property="og:url" content="http://yoursite.com/2019/07/08/dynamic/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="0.前言在好多框架源码中接触过动态代理，也发现动态有好多种不同的实现，但就是这么常见的特性我居然没有深入解析过，那么知耻而后勇的我即将把这块空缺补上。这里将根据一段简单的demo来讲解最常见的jdk中的动态代理。 1.示例做为demo入口的main实现如下 12345678910public static void main(String[] args) &amp;#123;    ConcreteCla">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-11-04T14:22:56.843Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JDK动态代理源码解析">
+<meta name="twitter:description" content="0.前言在好多框架源码中接触过动态代理，也发现动态有好多种不同的实现，但就是这么常见的特性我居然没有深入解析过，那么知耻而后勇的我即将把这块空缺补上。这里将根据一段简单的demo来讲解最常见的jdk中的动态代理。 1.示例做为demo入口的main实现如下 12345678910public static void main(String[] args) &amp;#123;    ConcreteCla">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/07/08/dynamic/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>JDK动态代理源码解析 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/08/dynamic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JDK动态代理源码解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-08 22:02:36" itemprop="dateCreated datePublished" datetime="2019-07-08T22:02:36+08:00">2019-07-08</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/源码解析/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2019/07/08/dynamic/" class="leancloud_visitors" data-flag-title="JDK动态代理源码解析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="0-前言"><a href="#0-前言" class="headerlink" title="0.前言"></a>0.前言</h4><p>在好多框架源码中接触过动态代理，也发现动态有好多种不同的实现，但就是这么常见的特性我居然没有深入解析过，那么知耻而后勇的我即将把这块空缺补上。这里将根据一段简单的demo来讲解最常见的jdk中的动态代理。</p>
+<h4 id="1-示例"><a href="#1-示例" class="headerlink" title="1.示例"></a>1.示例</h4><p>做为demo入口的<code>main</code>实现如下</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> void main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">    ConcreteClass c = <span class="keyword">new</span> <span class="type">ConcreteClass</span>();<span class="comment">// 元对象(被代理对象)</span></span><br><span class="line">    InvocationHandler ih = <span class="keyword">new</span> <span class="type">ProxyHandler</span>(c);<span class="comment">// 代理实例的调用处理程序。</span></span><br><span class="line">    <span class="comment">// 创建一个实现业务接口的代理类,用于访问业务类(见代理模式)。</span></span><br><span class="line">    <span class="comment">// 返回一个指定接口的代理类实例，该接口可以将方法调用指派到指定的调用处理程序，如ProxyHandler。</span></span><br><span class="line">    TargetInterface targetInterface = (TargetInterface) Proxy.<span class="keyword">new</span><span class="type">ProxyInstance</span>(c.getClass().getClassLoader(), c.getClass().getInterfaces(), ih);</span><br><span class="line">    <span class="comment">// 调用代理类方法,Java执行InvocationHandler接口的方法.</span></span><br><span class="line">    int i = targetInterface.targetMethodA(<span class="number">5</span>);</span><br><span class="line">    System.out.println(i);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>被代理对象<code>ConcreteClass</code>的定义如下</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ConcreteClass</span> <span class="title">implements</span> <span class="title">TargetInterface</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">targetMethodA</span>(<span class="params"><span class="keyword">int</span> number</span>)</span> &#123;</span><br><span class="line">        System.<span class="keyword">out</span>.println(<span class="string">"开始调用目标类的方法targetMethodA..."</span>);</span><br><span class="line">        System.<span class="keyword">out</span>.println(<span class="string">"操作-打印数字:"</span> + number);</span><br><span class="line">        System.<span class="keyword">out</span>.println(<span class="string">"结束调用目标类的方法targetMethodA..."</span>);</span><br><span class="line">        <span class="keyword">return</span> number;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代理类<code>ProxyHandler</code>的定义如下</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> class ProxyHandler implements InvocationHandler &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">Object</span> concreteClass;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> ProxyHandler(<span class="keyword">Object</span> concreteClass) &#123;</span><br><span class="line">        <span class="keyword">this</span>.concreteClass = concreteClass;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">Object</span> invoke(<span class="keyword">Object</span> proxy, Method method, <span class="keyword">Object</span>[] args) <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">        System.out.<span class="built_in">println</span>(<span class="string">"proxy:"</span> + proxy.getClass().getName());</span><br><span class="line">        System.out.<span class="built_in">println</span>(<span class="string">"method:"</span> + method.getName());</span><br><span class="line">        System.out.<span class="built_in">println</span>(<span class="string">"args:"</span> + args[<span class="number">0</span>].getClass().getName());</span><br><span class="line"></span><br><span class="line">        System.out.<span class="built_in">println</span>(<span class="string">"Before invoke method..."</span>);</span><br><span class="line">        <span class="keyword">Object</span> object = method.invoke(concreteClass, args);</span><br><span class="line">        <span class="comment">// 普通的Java反射代码,通过反射执行某个类的某方法</span></span><br><span class="line">        <span class="comment">// System.out.println(((ConcreteClass)concreteClass).targetMethod(10)+(Integer)args[0]);</span></span><br><span class="line">        System.out.<span class="built_in">println</span>(<span class="string">"After invoke method..."</span>);</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行<code>main</code>方法后输出的结果为</p>
+<blockquote>
+<p>proxy:com.sun.proxy.$Proxy0<br>method:targetMethodA<br>args:java.lang.Integer<br>Before invoke method…<br>开始调用目标类的方法targetMethodA…<br>操作-打印数字:5<br>结束调用目标类的方法targetMethodA…<br>After invoke method…<br>5</p>
+</blockquote>
+<p>这是一个很标准的jdk动态代理实现，基于此运行结果，我们从<code>main</code>方法开始分析源码实现</p>
+<h4 id="2-源码解析"><a href="#2-源码解析" class="headerlink" title="2.源码解析"></a>2.源码解析</h4><p><code>ConcreteClass c = new ConcreteClass()</code>和<code>InvocationHandler ih = new ProxyHandler(c)</code>就不分析了，只是简单的生成了一个被代理的对象和代理实例的处理程序对象。重点其实就在<code>(TargetInterface) Proxy.newProxyInstance(c.getClass().getClassLoader(), c.getClass().getInterfaces(), ih);</code>。我们来看一下<code>Proxy</code>类的<code>newProxyInstance</code>方法</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">@CallerSensitive</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Object newProxyInstance(ClassLoader loader, <span class="keyword">Class</span>&lt;?&gt;[] interfaces, InvocationHandler h)</span><br><span class="line">    <span class="keyword">throws</span> IllegalArgumentException</span><br><span class="line">&#123;</span><br><span class="line">    Objects.requireNonNull(h);<span class="comment">//判断非空</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">Class</span>&lt;?&gt;[] intfs = interfaces.clone();</span><br><span class="line">    <span class="keyword">final</span> SecurityManager sm = System.getSecurityManager();<span class="comment">//权限检查</span></span><br><span class="line">    <span class="keyword">if</span> (sm != <span class="keyword">null</span>) &#123;</span><br><span class="line">        checkProxyAccess(Reflection.getCallerClass(), loader, intfs);<span class="comment">//判断创建代理类的权限</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">Class</span>&lt;?&gt; cl = getProxyClass0(loader, intfs);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (sm != <span class="keyword">null</span>) &#123;</span><br><span class="line">            checkNewProxyPermission(Reflection.getCallerClass(), cl);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);</span><br><span class="line">        <span class="keyword">final</span> InvocationHandler ih = h;</span><br><span class="line">        <span class="keyword">if</span> (!Modifier.isPublic(cl.getModifiers())) &#123;</span><br><span class="line">            AccessController.doPrivileged(<span class="keyword">new</span> PrivilegedAction&lt;<span class="keyword">Void</span>&gt;() &#123;</span><br><span class="line">                <span class="keyword">public</span> <span class="keyword">Void</span> run() &#123;</span><br><span class="line">                    cons.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> cons.newInstance(<span class="keyword">new</span> Object[]&#123;h&#125;);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="comment">//省略了部分catch方法</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先是<code>System.getSecurityManager()</code>进行权限的判断，程序有运行权限的情况下才会执行<code>checkProxyAccess(Reflection.getCallerClass(), loader, intfs)</code>。这里要首先说一下<code>Reflection.getCallerClass()</code>，来看一下源码</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CallerSensitive</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> Class&lt;?&gt; getCallerClass();</span><br></pre></td></tr></table></figure>
+
+<p>这是一个native的方法，其实它还有一个同样的有参方法如下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** <span class="doctag">@deprecated</span> */</span></span><br><span class="line"><span class="meta">@Deprecated</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> Class&lt;?&gt; getCallerClass(<span class="keyword">int</span> var0);</span><br></pre></td></tr></table></figure>
+
+<p>这个方法的入参小于等于0时返回 Reflection类，1时返回自己的类，2时返回调用者的类，一直往上直到没有调用者时返回null。但很显然这个方法已经过时了，代替它的就是<code>getCallerClass()</code>方法。该方法会忽略所有带有<code>@CallerSensitive</code>注解的方法的类，返回碰到的第一个不含该注解的调用类。这样回过来看<code>Reflection.getCallerClass()</code>将会返回最初的调用者<code>DynamicProxyExample</code>类。<br>接着来看<code>checkProxyAccess()</code>方法</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> checkProxyAccess(<span class="keyword">Class</span>&lt;?&gt; caller,</span><br><span class="line">                                     ClassLoader loader,</span><br><span class="line">                                     <span class="keyword">Class</span>&lt;?&gt;... interfaces)</span><br><span class="line">&#123;</span><br><span class="line">    SecurityManager sm = System.getSecurityManager();</span><br><span class="line">    <span class="keyword">if</span> (sm != <span class="keyword">null</span>) &#123;</span><br><span class="line">        ClassLoader ccl = caller.getClassLoader();</span><br><span class="line">        <span class="keyword">if</span> (VM.isSystemDomainLoader(loader) &amp;&amp; !VM.isSystemDomainLoader(ccl)) &#123;</span><br><span class="line">            sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);</span><br><span class="line">        &#125;</span><br><span class="line">        ReflectUtil.checkProxyPackageAccess(ccl, interfaces);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里if的判断条件必须满足<code>loader</code>的ClassLoader为null，而<code>ccl</code>的ClassLoader不为null，才会执行。但这里显然两者都是<code>AppClassLoader</code>，所以会直接跳出if执行<code>ReflectUtil.checkProxyPackageAccess(ccl, interfaces)</code>判断<code>ccl</code>和<code>interfaces</code>的ClassLoader是否相同，若不同则在创建代理类时会抛出<code>IllegalAccessError</code>。<br>接着跳回来看<code>Class&lt;?&gt; cl = getProxyClass0(loader, intfs)</code></p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">Class</span>&lt;?&gt; getProxyClass0(ClassLoader loader,</span><br><span class="line">                                       <span class="keyword">Class</span>&lt;?&gt;... interfaces) &#123;</span><br><span class="line">    <span class="keyword">if</span> (interfaces.length &gt; <span class="number">65535</span>) &#123;<span class="comment">//接口数量不大于65535</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"interface limit exceeded"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//缓存中存在则从缓存中获取代理类，否则通过ProxyClassFactory创建代理类</span></span><br><span class="line">    <span class="keyword">return</span> proxyClassCache.get(loader, interfaces);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里主要看<code>proxyClassCache.get(loader, interfaces)</code>如何生成代理类，首先看一下<code>proxyClassCache</code>的定义</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> WeakCache&lt;ClassLoader, <span class="keyword">Class</span>&lt;?&gt;[], <span class="keyword">Class</span>&lt;?&gt;&gt;</span><br><span class="line">        proxyClassCache = <span class="keyword">new</span> WeakCache&lt;&gt;(<span class="keyword">new</span> KeyFactory(), <span class="keyword">new</span> ProxyClassFactory());</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>KeyFactory()</code>是二级缓存key的工厂，<code>ProxyClassFactory()</code>是二级缓存值的工厂，这两个先不深入研究。<br>接着来看<code>WeakCache</code>类的<code>get</code>方法的实现</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">public V <span class="keyword">get</span>(K key, P parameter) &#123;</span><br><span class="line">    Objects.requireNonNull(parameter);</span><br><span class="line"></span><br><span class="line">    expungeStaleEntries();<span class="comment">//清除已经被GC回收的弱引用</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">Object</span> cacheKey = CacheKey.valueOf(key, refQueue);<span class="comment">// 通过类加载器classLoader生成一级缓存的key</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">// map为一级缓存，从中获取二级缓存，不存在则新建</span></span><br><span class="line">    ConcurrentMap&lt;<span class="built_in">Object</span>, Supplier&lt;V&gt;&gt; valuesMap = map.<span class="keyword">get</span>(cacheKey);</span><br><span class="line">    <span class="keyword">if</span> (valuesMap == <span class="keyword">null</span>) &#123;</span><br><span class="line">        ConcurrentMap&lt;<span class="built_in">Object</span>, Supplier&lt;V&gt;&gt; oldValuesMap</span><br><span class="line">            = map.putIfAbsent(cacheKey,</span><br><span class="line">                              valuesMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;());</span><br><span class="line">        <span class="keyword">if</span> (oldValuesMap != <span class="keyword">null</span>) &#123;</span><br><span class="line">            valuesMap = oldValuesMap;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成二级缓存的key</span></span><br><span class="line">    <span class="built_in">Object</span> subKey = Objects.requireNonNull(subKeyFactory.apply(key, parameter));</span><br><span class="line">    <span class="comment">// 通过key获取二级缓存value,即缓存的代理类。不存在则新建代理类并加入缓存。</span></span><br><span class="line">    Supplier&lt;V&gt; supplier = valuesMap.<span class="keyword">get</span>(subKey);</span><br><span class="line">    Factory <span class="keyword">factory</span> = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (supplier != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// supplier might be a Factory or a CacheValue&lt;V&gt; instance</span></span><br><span class="line">            V value = supplier.<span class="keyword">get</span>();</span><br><span class="line">            <span class="keyword">if</span> (value != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> value;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// else no supplier in cache</span></span><br><span class="line">        <span class="comment">// or a supplier that returned null (could be a cleared CacheValue</span></span><br><span class="line">        <span class="comment">// or a Factory that wasn't successful in installing the CacheValue)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// lazily construct a Factory</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">factory</span> == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">factory</span> = <span class="keyword">new</span> Factory(key, parameter, subKey, valuesMap);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (supplier == <span class="keyword">null</span>) &#123;</span><br><span class="line">            supplier = valuesMap.putIfAbsent(subKey, <span class="keyword">factory</span>);</span><br><span class="line">            <span class="keyword">if</span> (supplier == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// successfully installed Factory</span></span><br><span class="line">                supplier = <span class="keyword">factory</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// else retry with winning supplier</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (valuesMap.replace(subKey, supplier, <span class="keyword">factory</span>)) &#123;</span><br><span class="line">                <span class="comment">// successfully replaced</span></span><br><span class="line">                <span class="comment">// cleared CacheEntry / unsuccessful Factory</span></span><br><span class="line">                <span class="comment">// with our Factory</span></span><br><span class="line">                supplier = <span class="keyword">factory</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// retry with current supplier</span></span><br><span class="line">                supplier = valuesMap.<span class="keyword">get</span>(subKey);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里有几个重要的属性需要事先说明一下</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReferenceQueue&lt;K&gt; refQueue  = <span class="keyword">new</span> ReferenceQueue&lt;&gt;();<span class="comment">//弱引用的关联队列</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConcurrentMap&lt;<span class="keyword">Object</span>, ConcurrentMap&lt;<span class="keyword">Object</span>, Supplier&lt;V&gt;&gt;&gt; <span class="built_in">map</span> = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();<span class="comment">//一级缓存</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConcurrentMap&lt;Supplier&lt;V&gt;, Boolean&gt; reverseMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();<span class="comment">//用于记录所有缓存中的CacheKey</span></span><br></pre></td></tr></table></figure>
+
+<p><code>refQueue</code>为弱引用的关联队列，当这个弱引用的对象触发GC时，会将其加入到该关联队列中。<code>reverseMap</code>用于记录所有缓存中的<code>CacheKey</code>。<code>map</code>是一级缓存，其key通过<code>CacheKey.valueOf(key, refQueue)</code>生成，因此与<code>classLoader</code>相关；value存储的是二级缓存，即<code>valuesMap</code>。<br><code>valuesMap</code>由<code>ConcurrentMap&lt;Object, Supplier&lt;V&gt;&gt; valuesMap = map.get(cacheKey)</code>取得，当<code>valuesMap</code>为空时则创建一个<code>ConcurrentHashMap&lt;&gt;()</code>。由此来看，这里相当于不同的<code>classLoader</code>对应了不同的二级缓存。那么二级缓存里面又存了什么呢，我们接着来看<code>Object subKey = Objects.requireNonNull(subKeyFactory.apply(key, parameter))</code>，这里的<code>subKey</code>即是二级缓存对应的key，来看看<code>subKeyFactory.apply(key, parameter)</code>的具体实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">apply</span><span class="params">(ClassLoader classLoader, Class&lt;?&gt;[] interfaces)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">switch</span> (interfaces.length) &#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">1</span>: <span class="keyword">return</span> <span class="keyword">new</span> Key1(interfaces[<span class="number">0</span>]); <span class="comment">// the most frequent</span></span><br><span class="line">        <span class="keyword">case</span> <span class="number">2</span>: <span class="keyword">return</span> <span class="keyword">new</span> Key2(interfaces[<span class="number">0</span>], interfaces[<span class="number">1</span>]);</span><br><span class="line">        <span class="keyword">case</span> <span class="number">0</span>: <span class="keyword">return</span> key0;</span><br><span class="line">        <span class="keyword">default</span>: <span class="keyword">return</span> <span class="keyword">new</span> KeyX(interfaces);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里返回的对象，根据传入的接口数组长度而定，我的demo中传入的接口数量为1，因此走的是<code>new Key1(interfaces[0])</code>分支，<code>Key1</code>类的具体实现为：</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> static <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Key1</span> <span class="keyword">extends</span> <span class="title">WeakReference&lt;Class&lt;?&gt;&gt;</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> int hash;</span><br><span class="line"></span><br><span class="line">    <span class="type">Key1</span>(<span class="type">Class</span>&lt;?&gt; intf) &#123;</span><br><span class="line">        <span class="keyword">super</span>(intf);</span><br><span class="line">        <span class="keyword">this</span>.hash = intf.hashCode();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    public int hashCode() &#123;</span><br><span class="line">        <span class="keyword">return</span> hash;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    public boolean equals(<span class="type">Object</span> obj) &#123;</span><br><span class="line">        <span class="type">Class</span>&lt;?&gt; intf;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span> == obj ||</span><br><span class="line">               obj != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">               obj.getClass() == <span class="type">Key1</span>.<span class="keyword">class</span> &amp;&amp;</span><br><span class="line">               (intf = get()) != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">               intf == ((<span class="type">Key1</span>) obj).get();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>获取到<code>subkey</code>后，根据<code>valuesMap.get(subKey)</code>从二级缓存获取<code>supplier</code>对象，接着进入一个<code>while（true）</code>死循环中。<br>当<code>supplier</code>非空时，说明已经有缓存的对象，通过<code>supplier.get()</code>会获取到代理类并返回。当<code>supplier</code>为空时，会放入一个<code>Factory</code>类型的<code>factory</code>对象，这也就是后来取出的<code>supplier</code>。那么我们来具体看看其<code>get()</code>方法的实现：</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line"><span class="function"><span class="keyword">public</span> synchronized V <span class="title">get</span>(<span class="params"></span>)</span> &#123; <span class="comment">// serialize access</span></span><br><span class="line">    <span class="comment">// re-check</span></span><br><span class="line">    Supplier&lt;V&gt; supplier = valuesMap.<span class="keyword">get</span>(subKey);</span><br><span class="line">    <span class="keyword">if</span> (supplier != <span class="keyword">this</span>) &#123;</span><br><span class="line">        <span class="comment">// 异常情况，返回WeakCache.get() 的循环中</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    V <span class="keyword">value</span> = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">value</span> = Objects.requireNonNull(valueFactory.apply(key, parameter));</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">value</span> == <span class="literal">null</span>) &#123; <span class="comment">// remove us on failure</span></span><br><span class="line">            valuesMap.<span class="keyword">remove</span>(subKey, <span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将value包装为CacheValue (WeakReference)</span></span><br><span class="line">    CacheValue&lt;V&gt; cacheValue = <span class="keyword">new</span> CacheValue&lt;&gt;(<span class="keyword">value</span>);</span><br><span class="line">    <span class="comment">// 放入reverseMap</span></span><br><span class="line">    reverseMap.put(cacheValue, Boolean.TRUE);</span><br><span class="line">    <span class="comment">//CacheValue代替旧值</span></span><br><span class="line">    <span class="keyword">if</span> (!valuesMap.replace(subKey, <span class="keyword">this</span>, cacheValue)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> AssertionError(<span class="string">"Should not reach here"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的重点是通过<code>valueFactory.apply(key, parameter)</code>生成<code>value</code>，然后将其包装为<code>CacheValue (WeakReference)</code>类型的对象<code>cacheValue</code>，放入<code>valuesMap</code>和<code>reverseMap</code>中。那么这里就要重点来看一下<code>valueFactory.apply(key, parameter)</code>是如何生成<code>value</code>的，这里的<code>valueFactory</code>就是之前提过的二级缓存值的工厂<code>ProxyClassFactory</code>，那么来具体看一下其<code>apply()</code>方法</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">Class</span>&lt;?&gt; apply(ClassLoader loader, <span class="keyword">Class</span>&lt;?&gt;[] interfaces) &#123;</span><br><span class="line"></span><br><span class="line">    Map&lt;<span class="keyword">Class</span>&lt;?&gt;, <span class="keyword">Boolean</span>&gt; interfaceSet = <span class="keyword">new</span> IdentityHashMap&lt;&gt;(interfaces.length);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">Class</span>&lt;?&gt; intf : interfaces) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Verify that the class loader resolves the name of this</span></span><br><span class="line"><span class="comment">         * interface to the same Class object.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">Class</span>&lt;?&gt; interfaceClass = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            interfaceClass = <span class="keyword">Class</span>.forName(intf.getName(), <span class="keyword">false</span>, loader);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (interfaceClass != intf) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                intf + <span class="string">" is not visible from class loader"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 验证该类对象确实是一个接口</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (!interfaceClass.isInterface()) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                interfaceClass.getName() + <span class="string">" is not an interface"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 验证该接口不重复</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (interfaceSet.put(interfaceClass, <span class="keyword">Boolean</span>.<span class="keyword">TRUE</span>) != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                <span class="string">"repeated interface: "</span> + interfaceClass.getName());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    String proxyPkg = <span class="keyword">null</span>;     <span class="comment">// package to define proxy class in</span></span><br><span class="line">    <span class="keyword">int</span> accessFlags = Modifier.<span class="keyword">PUBLIC</span> | Modifier.<span class="keyword">FINAL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 为了考虑非公有的代理接口，需要将代理类定义在同一个包下</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">Class</span>&lt;?&gt; intf : interfaces) &#123;</span><br><span class="line">        <span class="keyword">int</span> flags = intf.getModifiers();</span><br><span class="line">        <span class="keyword">if</span> (!Modifier.isPublic(flags)) &#123;</span><br><span class="line">            accessFlags = Modifier.<span class="keyword">FINAL</span>;</span><br><span class="line">            String name = intf.getName();</span><br><span class="line">            <span class="keyword">int</span> n = name.lastIndexOf(<span class="string">'.'</span>);</span><br><span class="line">            String pkg = ((n == -<span class="number">1</span>) ? <span class="string">""</span> : name.substring(<span class="number">0</span>, n + <span class="number">1</span>));</span><br><span class="line">            <span class="keyword">if</span> (proxyPkg == <span class="keyword">null</span>) &#123;</span><br><span class="line">                proxyPkg = pkg;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!pkg.equals(proxyPkg)) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                    <span class="string">"non-public interfaces from different packages"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (proxyPkg == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果全部都是公有的代理接口，则使用com.sun.proxy这个包名</span></span><br><span class="line">        proxyPkg = ReflectUtil.PROXY_PACKAGE + <span class="string">"."</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 为创建的代理类选择一个名字</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">long</span> num = nextUniqueNumber.getAndIncrement();</span><br><span class="line">    String proxyName = proxyPkg + proxyClassNamePrefix + num;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 生成指定代理类.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">byte</span>[] proxyClassFile = ProxyGenerator.generateProxyClass(</span><br><span class="line">        proxyName, interfaces, accessFlags);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> defineClass0(loader, proxyName,</span><br><span class="line">                            proxyClassFile, <span class="number">0</span>, proxyClassFile.length);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (ClassFormatError e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(e.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法看似很长，其实大部分都是在做接口验证、包名和类名生成等，最核心的其实是<code>ProxyGenerator.generateProxyClass(
+                proxyName, interfaces, accessFlags)</code>生成代理类的字节码，其具体实现为</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">byte</span>[] generateProxyClass(<span class="keyword">final</span> String var0, <span class="keyword">Class</span>&lt;?&gt;[] var1, <span class="keyword">int</span> var2) &#123;</span><br><span class="line">    ProxyGenerator var3 = <span class="keyword">new</span> ProxyGenerator(var0, var1, var2);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">byte</span>[] var4 = var3.generateClassFile();</span><br><span class="line">    <span class="keyword">if</span> (saveGeneratedFiles) &#123;<span class="comment">//判断是否要保存到本地文件中</span></span><br><span class="line">        AccessController.doPrivileged(<span class="keyword">new</span> PrivilegedAction&lt;<span class="keyword">Void</span>&gt;() &#123;</span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">Void</span> run() &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">int</span> var1 = var0.lastIndexOf(<span class="number">46</span>);</span><br><span class="line">                    Path var2;</span><br><span class="line">                    <span class="keyword">if</span> (var1 &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                        Path var3 = Paths.get(var0.substring(<span class="number">0</span>, var1).replace(<span class="string">'.'</span>, <span class="keyword">File</span>.separatorChar));</span><br><span class="line">                        Files.createDirectories(var3);</span><br><span class="line">                        var2 = var3.resolve(var0.substring(var1 + <span class="number">1</span>, var0.length()) + <span class="string">".class"</span>);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        var2 = Paths.get(var0 + <span class="string">".class"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    Files.<span class="keyword">write</span>(var2, var4, <span class="keyword">new</span> OpenOption[<span class="number">0</span>]);</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125; <span class="keyword">catch</span> (IOException var4x) &#123;</span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> InternalError(<span class="string">"I/O exception saving generated file: "</span> + var4x);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> var4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里有一个判断条件<code>saveGeneratedFiles</code>，根据其判断是否要将生成的代理类保存到本地文件中，其实现为</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">boolean</span> saveGeneratedFiles = (<span class="keyword">Boolean</span>)AccessController.doPrivileged(<span class="keyword">new</span> GetBooleanAction(<span class="string">"sun.misc.ProxyGenerator.saveGeneratedFiles"</span>));</span><br></pre></td></tr></table></figure>
+
+<p>从这里看出当我们设置系统变量<code>System.getProperties().put(&quot;sun.misc.ProxyGenerator.saveGeneratedFiles&quot;, &quot;true&quot;)</code>后就可以持久化生成的代理类，据此我们在工程根目录的com/sun/proxy文件夹下找到了代理类<code>$Proxy0.class</code>，反编译后来看一下这个类</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.sun.proxy;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> TargetInterface;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> $Proxy0 <span class="keyword">extends</span> Proxy</span><br><span class="line">	<span class="keyword">implements</span> TargetInterface</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Method m1;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Method m2;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Method m3;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Method m4;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Method m0;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> $Proxy0(InvocationHandler invocationhandler)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">super</span>(invocationhandler);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> equals(Object obj)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> ((<span class="keyword">Boolean</span>)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m1, <span class="keyword">new</span> Object[] &#123;</span><br><span class="line">				obj</span><br><span class="line">			&#125;)).booleanValue();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Error ) &#123; &#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable throwable)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(throwable);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">final</span> String toString()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> (String)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m2, <span class="keyword">null</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Error ) &#123; &#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable throwable)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(throwable);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> targetMethodA(<span class="keyword">int</span> i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> ((Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m3, <span class="keyword">new</span> Object[] &#123;</span><br><span class="line">				Integer.valueOf(i)</span><br><span class="line">			&#125;)).intValue();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Error ) &#123; &#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable throwable)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(throwable);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> targetMethodB(<span class="keyword">int</span> i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> ((Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m4, <span class="keyword">new</span> Object[] &#123;</span><br><span class="line">				Integer.valueOf(i)</span><br><span class="line">			&#125;)).intValue();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Error ) &#123; &#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable throwable)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(throwable);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> hashCode()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> ((Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m0, <span class="keyword">null</span>)).intValue();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Error ) &#123; &#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable throwable)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(throwable);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">static</span> </span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			m1 = <span class="keyword">Class</span>.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"equals"</span>, <span class="keyword">new</span> <span class="keyword">Class</span>[] &#123;</span><br><span class="line">				<span class="keyword">Class</span>.forName(<span class="string">"java.lang.Object"</span>)</span><br><span class="line">			&#125;);</span><br><span class="line">			m2 = <span class="keyword">Class</span>.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"toString"</span>, <span class="keyword">new</span> <span class="keyword">Class</span>[<span class="number">0</span>]);</span><br><span class="line">			m3 = <span class="keyword">Class</span>.forName(<span class="string">"TargetInterface"</span>).getMethod(<span class="string">"targetMethodA"</span>, <span class="keyword">new</span> <span class="keyword">Class</span>[] &#123;</span><br><span class="line">				Integer.TYPE</span><br><span class="line">			&#125;);</span><br><span class="line">			m4 = <span class="keyword">Class</span>.forName(<span class="string">"TargetInterface"</span>).getMethod(<span class="string">"targetMethodB"</span>, <span class="keyword">new</span> <span class="keyword">Class</span>[] &#123;</span><br><span class="line">				Integer.TYPE</span><br><span class="line">			&#125;);</span><br><span class="line">			m0 = <span class="keyword">Class</span>.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"hashCode"</span>, <span class="keyword">new</span> <span class="keyword">Class</span>[<span class="number">0</span>]);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (NoSuchMethodException nosuchmethodexception)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> NoSuchMethodError(nosuchmethodexception.getMessage());</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (ClassNotFoundException classnotfoundexception)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> NoClassDefFoundError(classnotfoundexception.getMessage());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出<code>$Proxy0</code>继承了<code>Proxy</code>，并且实现了需要代理的<code>TargetInterface</code>接口，当执行代理类的方法时首先会执行<code>super.h.invoke</code>方法，即传入的<code>invocationhandler</code>对象的<code>invoke</code>方法，这里具体执行的即是代理类<code>ProxyHandler</code>的<code>invoke</code>方法，在该<code>invoke</code>方法中再具体执行业务代码，这里就不再分析下去了。</p>
+<h4 id="3-总结"><a href="#3-总结" class="headerlink" title="3.总结"></a>3.总结</h4><p>本文分析了JDK动态代理的底层实现，包括了其中的两级缓存机制，以及具体代理类的生成，对动态代理的实现机制有了更深的认识。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jdk/" rel="tag"># jdk</a>
+          
+            <a href="/tags/动态代理/" rel="tag"># 动态代理</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/08/dubbo3/" rel="next" title="Dubbo生产者初始化">
+                <i class="fa fa-chevron-left"></i> Dubbo生产者初始化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/07/08/KthLargest/" rel="prev" title="数据流中的第K大元素">
+                数据流中的第K大元素 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#0-前言"><span class="nav-number">1.</span> <span class="nav-text">0.前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-示例"><span class="nav-number">2.</span> <span class="nav-text">1.示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-源码解析"><span class="nav-number">3.</span> <span class="nav-text">2.源码解析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-总结"><span class="nav-number">4.</span> <span class="nav-text">3.总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言之前已经写了三篇关于DUBBO的了，本文将是DUBBO系列的最后最后一篇，这篇写完之后也就对DUBBO的整个初始化和调用流程都有了较为详细的了解了，让我们赶紧来做个Ending吧。 源码解析消费者调用流程涉及到消费者端和生产者端的交互，所以将分为三个部分来讲解，分别是-消费者发起调用请求-生产者响应调用请求-消费者获取调用结果 消费者发起调用请求之前文章中讲过消费者初始化时最后返回的是一个In">
+<meta name="keywords" content="dubbo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dubbo消费者调用过程源码解析">
+<meta property="og:url" content="http://yoursite.com/2019/07/08/dubbo4/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="前言之前已经写了三篇关于DUBBO的了，本文将是DUBBO系列的最后最后一篇，这篇写完之后也就对DUBBO的整个初始化和调用流程都有了较为详细的了解了，让我们赶紧来做个Ending吧。 源码解析消费者调用流程涉及到消费者端和生产者端的交互，所以将分为三个部分来讲解，分别是-消费者发起调用请求-生产者响应调用请求-消费者获取调用结果 消费者发起调用请求之前文章中讲过消费者初始化时最后返回的是一个In">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-11-04T14:20:01.316Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dubbo消费者调用过程源码解析">
+<meta name="twitter:description" content="前言之前已经写了三篇关于DUBBO的了，本文将是DUBBO系列的最后最后一篇，这篇写完之后也就对DUBBO的整个初始化和调用流程都有了较为详细的了解了，让我们赶紧来做个Ending吧。 源码解析消费者调用流程涉及到消费者端和生产者端的交互，所以将分为三个部分来讲解，分别是-消费者发起调用请求-生产者响应调用请求-消费者获取调用结果 消费者发起调用请求之前文章中讲过消费者初始化时最后返回的是一个In">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/07/08/dubbo4/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Dubbo消费者调用过程源码解析 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/08/dubbo4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dubbo消费者调用过程源码解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-08 22:02:36" itemprop="dateCreated datePublished" datetime="2019-07-08T22:02:36+08:00">2019-07-08</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/源码解析/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2019/07/08/dubbo4/" class="leancloud_visitors" data-flag-title="Dubbo消费者调用过程源码解析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h4><p>之前已经写了三篇关于DUBBO的了，本文将是DUBBO系列的最后最后一篇，这篇写完之后也就对DUBBO的整个初始化和调用流程都有了较为详细的了解了，让我们赶紧来做个Ending吧。</p>
+<h4 id="源码解析"><a href="#源码解析" class="headerlink" title="源码解析"></a>源码解析</h4><p>消费者调用流程涉及到消费者端和生产者端的交互，所以将分为三个部分来讲解，分别是<br>-消费者发起调用请求<br>-生产者响应调用请求<br>-消费者获取调用结果</p>
+<h5 id="消费者发起调用请求"><a href="#消费者发起调用请求" class="headerlink" title="消费者发起调用请求"></a>消费者发起调用请求</h5><p>之前文章中讲过消费者初始化时最后返回的是一个<code>InvokerInvocationHandler</code>的代理对象，根据动态代理的原理，DUBBO接口的方法调用都会由<code>invoke</code>方法代理，我们来看一下其实现</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public Object invoke(Object proxy, Method <span class="built_in">method</span>, Object[] <span class="built_in">args</span>) throws Throwable &#123;</span><br><span class="line">    String methodName = <span class="built_in">method</span>.getName();</span><br><span class="line">    Class&lt;?&gt;[] parameterTypes = <span class="built_in">method</span>.getParameterTypes();</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">method</span>.getDeclaringClass() == Object.class) &#123;</span><br><span class="line">        <span class="built_in">return</span> <span class="built_in">method</span>.invoke(invoker, <span class="built_in">args</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">"toString"</span>.equals(methodName) &amp;&amp; parameterTypes.<span class="built_in">length</span> == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">return</span> invoker.toString();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">"hashCode"</span>.equals(methodName) &amp;&amp; parameterTypes.<span class="built_in">length</span> == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">return</span> invoker.hashCode();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">"equals"</span>.equals(methodName) &amp;&amp; parameterTypes.<span class="built_in">length</span> == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">return</span> invoker.equals(<span class="built_in">args</span>[<span class="number">0</span>]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> invoker.invoke(<span class="built_in">new</span> RpcInvocation(<span class="built_in">method</span>, <span class="built_in">args</span>)).recreate();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正常情况下的方法调用会走<code>invoker.invoke(new RpcInvocation(method, args)).recreate()</code>这个分支，首先来看<code>new RpcInvocation(method, args)</code></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> RpcInvocation(Method method, <span class="built_in">Object</span>[] <span class="built_in">arguments</span>) &#123;</span><br><span class="line">    <span class="keyword">this</span>(method.getName(), method.getParameterTypes(), <span class="built_in">arguments</span>, <span class="literal">null</span>, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> RpcInvocation(<span class="built_in">String</span> methodName, Class&lt;?&gt;[] parameterTypes, <span class="built_in">Object</span>[] <span class="built_in">arguments</span>, Map&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; attachments, Invoker&lt;?&gt; invoker) &#123;</span><br><span class="line">    <span class="keyword">this</span>.methodName = methodName;</span><br><span class="line">    <span class="keyword">this</span>.parameterTypes = parameterTypes == <span class="literal">null</span> ? <span class="keyword">new</span> Class&lt;?&gt;[<span class="number">0</span>] : parameterTypes;</span><br><span class="line">    <span class="keyword">this</span>.arguments = <span class="built_in">arguments</span> == <span class="literal">null</span> ? <span class="keyword">new</span> <span class="built_in">Object</span>[<span class="number">0</span>] : <span class="built_in">arguments</span>;</span><br><span class="line">    <span class="keyword">this</span>.attachments = attachments == <span class="literal">null</span> ? <span class="keyword">new</span> HashMap&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt;() : attachments;</span><br><span class="line">    <span class="keyword">this</span>.invoker = invoker;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>非常简单的一个初始化赋值操作，就不做过多讲解了，接着回头看<code>invoker.invoke(new RpcInvocation(method, args))</code>方法，这里的<code>invoker</code>之前也说过了，是一个通过SPI机制生成的对象，以默认设置的参数<code>failover</code>为例，这里的<code>invoker</code>就是一个<code>MockClusterInvoker</code>对象中包含了一个<code>FailoverClusterInvoker</code>对象引用的类似链式的对象，那么我们来详细看看<code>MockClusterInvoker</code>的<code>invoke</code>方法</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Result <span class="title">invoke</span>(<span class="params">Invocation invocation</span>) throws RpcException</span> &#123;</span><br><span class="line">	Result result = <span class="literal">null</span>;</span><br><span class="line">       <span class="comment">//获取mock属性的值，没有配置，默认false</span></span><br><span class="line">       String <span class="keyword">value</span> = directory.getUrl().getMethodParameter(invocation.getMethodName(), Constants.MOCK_KEY, Boolean.FALSE.toString()).trim(); </span><br><span class="line">       <span class="keyword">if</span> (<span class="keyword">value</span>.length() == <span class="number">0</span> || <span class="keyword">value</span>.equalsIgnoreCase(<span class="string">"false"</span>))&#123;</span><br><span class="line">       	<span class="comment">//no mock</span></span><br><span class="line">       	result = <span class="keyword">this</span>.invoker.invoke(invocation);</span><br><span class="line">       &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">value</span>.startsWith(<span class="string">"force"</span>)) &#123;</span><br><span class="line">       	<span class="keyword">if</span> (logger.isWarnEnabled()) &#123;</span><br><span class="line">       		logger.info(<span class="string">"force-mock: "</span> + invocation.getMethodName() + <span class="string">" force-mock enabled , url : "</span> +  directory.getUrl());</span><br><span class="line">       	&#125;</span><br><span class="line">       	<span class="comment">//force:direct mock</span></span><br><span class="line">       	result = doMockInvoke(invocation, <span class="literal">null</span>);</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       	<span class="comment">//fail-mock</span></span><br><span class="line">       	<span class="keyword">try</span> &#123;</span><br><span class="line">       		result = <span class="keyword">this</span>.invoker.invoke(invocation);</span><br><span class="line">       	&#125;<span class="keyword">catch</span> (RpcException e) &#123;</span><br><span class="line">			<span class="keyword">if</span> (e.isBiz()) &#123;</span><br><span class="line">				<span class="keyword">throw</span> e;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> (logger.isWarnEnabled()) &#123;</span><br><span class="line">	        		logger.info(<span class="string">"fail-mock: "</span> + invocation.getMethodName() + <span class="string">" fail-mock enabled , url : "</span> +  directory.getUrl(), e);</span><br><span class="line">	        	&#125;</span><br><span class="line">				result = doMockInvoke(invocation, e);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当没有配置<code>mock</code>值时，<code>value</code>值得到的是默认值<code>false</code>，会去执行<code>result = this.invoker.invoke(invocation)</code>，<code>this.invoker</code>刚才提到过了是一个<code>FailoverClusterInvoker</code>类型的对象，但该对象并没有实现<code>invoke</code>方法，实际上该方法是继承自父类<code>AbstractClusterInvoker</code>的，来看一下</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result invoke(<span class="keyword">final</span> Invocation invocation) <span class="keyword">throws</span> RpcException &#123;</span><br><span class="line"></span><br><span class="line">    checkWheatherDestoried();</span><br><span class="line"></span><br><span class="line">    LoadBalance loadbalance;</span><br><span class="line">    </span><br><span class="line">    List&lt;Invoker&lt;T&gt;&gt; invokers = list(invocation);</span><br><span class="line">    <span class="keyword">if</span> (invokers != <span class="keyword">null</span> &amp;&amp; invokers.<span class="keyword">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        loadbalance = ExtensionLoader.getExtensionLoader(LoadBalance.<span class="keyword">class</span>).getExtension(invokers.get(<span class="number">0</span>).getUrl()</span><br><span class="line">                .getMethodParameter(invocation.getMethodName(),Constants.LOADBALANCE_KEY, Constants.DEFAULT_LOADBALANCE));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        loadbalance = ExtensionLoader.getExtensionLoader(LoadBalance.<span class="keyword">class</span>).getExtension(Constants.DEFAULT_LOADBALANCE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//异步操作默认添加invocation id</span></span><br><span class="line">    RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);</span><br><span class="line">    <span class="keyword">return</span> doInvoke(invocation, invokers, loadbalance);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>list(invocation)</code>方法根据<code>invocation</code>中的参数来获取所有的<code>invoker</code>列表，就不深入讲了，接着来看<code>loadbalance</code>对象的生成，<code>loadbalance</code>对象根据SPI机制生成，具体实现由<code>loadbalance</code>参数决定，也就是具体的负载均衡策略，DUBBO提供的实现有<code>random</code>、<code>roundrobin</code>、<code>leastactive</code>、<code>consistenthash</code>四种，其中没有根据服务端负载进行调节的策略。其中默认实现为<code>random</code>，生成的<code>loadbalance</code>就是一个<code>RandomLoadBalance</code>的对象。本次只分析同步的接口调用方式，跳过<code>RpcUtils.attachInvocationIdIfAsync</code>，接着看doInvoke(invocation, invokers, loadbalance)方法，该方法实现在<code>FailoverClusterInvoker</code>中</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">public Result doInvoke(Invocation invocation, <span class="keyword">final</span> <span class="built_in">List</span>&lt;Invoker&lt;T&gt;&gt; invokers, LoadBalance loadbalance) throws RpcException &#123;</span><br><span class="line">	<span class="built_in">List</span>&lt;Invoker&lt;T&gt;&gt; copyinvokers = invokers;</span><br><span class="line">    <span class="comment">//检查invokers是否为空</span></span><br><span class="line">	checkInvokers(copyinvokers, invocation);</span><br><span class="line">    <span class="comment">//获取重试次数</span></span><br><span class="line">    <span class="built_in">int</span> len = getUrl().getMethodParameter(invocation.getMethodName(), Constants.RETRIES_KEY, Constants.DEFAULT_RETRIES) + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (len &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        len = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// retry loop.</span></span><br><span class="line">    RpcException le = <span class="keyword">null</span>; <span class="comment">// last exception.</span></span><br><span class="line">    <span class="built_in">List</span>&lt;Invoker&lt;T&gt;&gt; invoked = <span class="keyword">new</span> ArrayList&lt;Invoker&lt;T&gt;&gt;(copyinvokers.size()); <span class="comment">// invoked invokers.</span></span><br><span class="line">    <span class="built_in">Set</span>&lt;<span class="built_in">String</span>&gt; providers = <span class="keyword">new</span> HashSet&lt;<span class="built_in">String</span>&gt;(len);</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; len; i++) &#123;</span><br><span class="line">    	<span class="comment">//重试时，进行重新选择，避免重试时invoker列表已发生变化.</span></span><br><span class="line">    	<span class="comment">//注意：如果列表发生了变化，那么invoked判断会失效，因为invoker示例已经改变</span></span><br><span class="line">    	<span class="keyword">if</span> (i &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    		checkWheatherDestoried();</span><br><span class="line">                    <span class="comment">//获得InvokerWrapper的List</span></span><br><span class="line">    		copyinvokers = list(invocation);</span><br><span class="line">    		<span class="comment">//重新检查一下</span></span><br><span class="line">    		checkInvokers(copyinvokers, invocation);</span><br><span class="line">    	&#125;</span><br><span class="line">        Invoker&lt;T&gt; invoker = select(loadbalance, invocation, copyinvokers, invoked);</span><br><span class="line">        invoked.add(invoker);</span><br><span class="line">        RpcContext.getContext().setInvokers((<span class="built_in">List</span>)invoked);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Result result = invoker.invoke(invocation);</span><br><span class="line">            <span class="keyword">if</span> (le != <span class="keyword">null</span> &amp;&amp; logger.isWarnEnabled()) &#123;</span><br><span class="line">                logger.warn(<span class="string">""</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RpcException e) &#123;</span><br><span class="line">            <span class="keyword">if</span> (e.isBiz()) &#123; <span class="comment">// biz exception.</span></span><br><span class="line">                <span class="keyword">throw</span> e;</span><br><span class="line">            &#125;</span><br><span class="line">            le = e;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">            le = <span class="keyword">new</span> RpcException(e.getMessage(), e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            providers.add(invoker.getUrl().getAddress());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RpcException</span><br><span class="line">     <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     *   </span>略去部分代码</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     */</span></span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>select(loadbalance, invocation, copyinvokers, invoked)</code>方法根据传入的<code>loadbalance</code>对象挑选出一个执行用的<code>invoker</code>，里面调用链较深，在此不做详细分析。最终将通过<code>invoker.invoke(invocation)</code>进行调用并返回一个<code>Result</code>类型的对象，也就是最终的执行结果，这里的<code>invoker</code>对象是<code>InvokerWrapper</code>的实例，该实例引用了一个<code>ListenerInvokerWrapper</code>的实例，接着又链式引用了<code>AbstractInvoker</code>的实例，因此最终执行的<code>invoke</code>方法在<code>AbstractInvoker</code>中，来看一下</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result invoke(Invocation inv) <span class="keyword">throws</span> RpcException &#123;</span><br><span class="line">    <span class="keyword">if</span>(destroyed) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RpcException(<span class="string">"略"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    RpcInvocation invocation = (RpcInvocation) inv;</span><br><span class="line">    invocation.setInvoker(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">if</span> (attachment != <span class="keyword">null</span> &amp;&amp; attachment.<span class="keyword">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    	invocation.addAttachmentsIfAbsent(attachment);</span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, String&gt; context = RpcContext.getContext().getAttachments();</span><br><span class="line">    <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    	invocation.addAttachmentsIfAbsent(context);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (getUrl().getMethodParameter(invocation.getMethodName(), Constants.ASYNC_KEY, <span class="keyword">false</span>))&#123;</span><br><span class="line">    	invocation.setAttachment(Constants.ASYNC_KEY, <span class="keyword">Boolean</span>.<span class="keyword">TRUE</span>.toString());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//异步操作默认添加invocation id</span></span><br><span class="line">    RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> doInvoke(invocation);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InvocationTargetException e) &#123; <span class="comment">// biz exception</span></span><br><span class="line">     <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *   略去部分代码</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的关键方法是<code>doInvoke(invocation)</code>，其实现在具体的<code>Invoker</code>实现类中，这里我们采用的是默认的dubbo协议，所以实现类为<code>DubboInvoker</code>，来看看其<code>doInvoke</code>方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line"><span class="keyword">protected</span> Result doInvoke(<span class="keyword">final</span> Invocation invocation) <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    RpcInvocation inv = (RpcInvocation) invocation;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">String</span> methodName = RpcUtils.getMethodName(invocation);</span><br><span class="line">    inv.setAttachment(Constants.PATH_KEY, getUrl().getPath());</span><br><span class="line">    inv.setAttachment(Constants.VERSION_KEY, version);</span><br><span class="line">    </span><br><span class="line">    ExchangeClient currentClient;</span><br><span class="line">    <span class="comment">//消费者初始化时与服务端建立的连接</span></span><br><span class="line">    <span class="keyword">if</span> (clients.length == <span class="number">1</span>) &#123;</span><br><span class="line">        currentClient = clients[<span class="number">0</span>];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        currentClient = clients[index.getAndIncrement() % clients.length];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="built_in">boolean</span> isAsync = RpcUtils.isAsync(getUrl(), invocation);</span><br><span class="line">        <span class="built_in">boolean</span> isOneway = RpcUtils.isOneway(getUrl(), invocation);</span><br><span class="line">        <span class="built_in">int</span> timeout = getUrl().getMethodParameter(methodName, Constants.TIMEOUT_KEY,Constants.DEFAULT_TIMEOUT);</span><br><span class="line">        <span class="keyword">if</span> (isOneway) &#123;</span><br><span class="line">        	<span class="built_in">boolean</span> isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, <span class="keyword">false</span>);</span><br><span class="line">            currentClient.send(inv, isSent);</span><br><span class="line">            RpcContext.getContext().setFuture(<span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> RpcResult();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isAsync) &#123;</span><br><span class="line">        	ResponseFuture future = currentClient.request(inv, timeout) ;</span><br><span class="line">            RpcContext.getContext().setFuture(<span class="keyword">new</span> FutureAdapter&lt;<span class="keyword">Object</span>&gt;(future));</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> RpcResult();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        	RpcContext.getContext().setFuture(<span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">return</span> (Result) currentClient.request(inv, timeout).<span class="built_in">get</span>();</span><br><span class="line">        &#125;</span><br><span class="line">     <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *   略去部分代码</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>isOneway</code>和<code>isAsync</code>两个标志位分别区分单向调用(不在乎调用结果)和异步调用，这里我们分析同步调用的流程，这里的<code>currentClient</code>是一个<code>ReferenceCountExchangeClient</code>类型的对象</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function">ResponseFuture <span class="title">request</span><span class="params">(Object request)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">return</span> client.<span class="title">request</span><span class="params">(request)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>client</code>是一个<code>HeaderExchangeClient</code>类型的对象，</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function">ResponseFuture <span class="title">request</span><span class="params">(Object request)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">return</span> channel.<span class="title">request</span><span class="params">(request)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>channel</code>是一个<code>HeaderExchangeChannel</code>类型的对象，继续跟进去</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function">ResponseFuture <span class="title">request</span><span class="params">(Object request)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> request(request, channel.getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="function">ResponseFuture <span class="title">request</span><span class="params">(Object request, <span class="keyword">int</span> timeout)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (closed) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(<span class="keyword">this</span>.getLocalAddress(), <span class="keyword">null</span>, <span class="string">"Failed to send request "</span> + request + <span class="string">", cause: The channel "</span> + <span class="keyword">this</span> + <span class="string">" is closed!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// create request.</span></span><br><span class="line">    Request req = <span class="keyword">new</span> Request();</span><br><span class="line">    req.setVersion(<span class="string">"2.0.0"</span>);</span><br><span class="line">    req.setTwoWay(<span class="keyword">true</span>);</span><br><span class="line">    req.setData(request);</span><br><span class="line">    DefaultFuture future = <span class="keyword">new</span> DefaultFuture(channel, req, timeout);</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        channel.send(req);</span><br><span class="line">    &#125;<span class="keyword">catch</span> (RemotingException e) &#123;</span><br><span class="line">        future.cancel();</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> future;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>request</code>方法自己又进行了一次内部调用，可以看到具体实现时创建了一个<code>DefaultFuture</code>对象并且通过<code>channel.send(req)</code>方法发送请求到生产者端，这里不做具体深入了。接着我们跳回<code>DubboInvoker</code>类<code>doInvoke</code>方法中的<code>currentClient.request(inv, timeout).get()</code>，这里是不是和jdk中future的用法很像，事实上这里也确实是通过<code>get</code>方法的调用将线程阻塞在这里等待结果，从而将异步调用转化为同步。为了证实这个想法，我们来看看<code>DefaultFuture</code>的<code>get</code>方法</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">get</span>(<span class="params"></span>) throws RemotingException</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">get</span>(timeout);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">get</span>(<span class="params"><span class="keyword">int</span> timeout</span>) throws RemotingException</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (timeout &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        timeout = Constants.DEFAULT_TIMEOUT;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (! isDone()) &#123;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">lock</span>.<span class="keyword">lock</span>();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (! isDone()) &#123;</span><br><span class="line">                done.<span class="keyword">await</span>(timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">                <span class="keyword">if</span> (isDone() || System.currentTimeMillis() - start &gt; timeout) &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">lock</span>.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (! isDone()) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> TimeoutException(sent &gt; <span class="number">0</span>, channel, getTimeoutMessage(<span class="literal">false</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> returnFromResponse();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从<code>done.await(timeout, TimeUnit.MILLISECONDS)</code>可以看到这里不仅是等待<code>isDone()</code>这个状态位，同时还有超时时间的限制。<code>isDone()</code>判断的是什么，来看一下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">boolean</span> <span class="title">isDone</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> response != <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>response</code>对象是否为空，那么后面的流程其实不难猜，生产者处理完结果会来填充<code>response</code>。</p>
+<h5 id="生产者响应调用请求"><a href="#生产者响应调用请求" class="headerlink" title="生产者响应调用请求"></a>生产者响应调用请求</h5><p>生产者开启了端口监听，消息的解码由Netty处理，解码后交由<code>NettyHandler</code>的<code>messageReceived</code>方法进行业务处理，来看一下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(ChannelHandlerContext ctx, MessageEvent e)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    NettyChannel channel = NettyChannel.getOrAddChannel(ctx.getChannel(), url, <span class="keyword">handler</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">handler</span>.received(channel, e.getMessage());</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        NettyChannel.removeChannelIfDisconnected(ctx.getChannel());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先来看一下<code>NettyChannel.getOrAddChannel</code></p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="function">NettyChannel <span class="title">getOrAddChannel</span><span class="params">(org.jboss.netty.channel.Channel ch, URL url, ChannelHandler <span class="keyword">handler</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (ch == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    NettyChannel ret = channelMap.get(ch);</span><br><span class="line">    <span class="keyword">if</span> (ret == <span class="keyword">null</span>) &#123;</span><br><span class="line">        NettyChannel nc = <span class="keyword">new</span> NettyChannel(ch, url, <span class="keyword">handler</span>);</span><br><span class="line">        <span class="keyword">if</span> (ch.isConnected()) &#123;</span><br><span class="line">            ret = channelMap.putIfAbsent(ch, nc);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ret == <span class="keyword">null</span>) &#123;</span><br><span class="line">            ret = nc;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>主要是从<code>channelMap</code>中获取对应的<code>NettyChannel</code>，接着回到<code>NettyHandler</code>的<code>messageReceived</code>方法来看<code>handler.received(channel, e.getMessage())</code>，这里的<code>handler</code>是一个<code>NettyServer</code>的实例，但它本身没有实现<code>received</code>方法，该方法要追溯到它的父类的父类的父类（真的就是这么长的继承关系。。。）<code>AbstractPeer</code>中，来看一下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel ch, Object msg)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (closed) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">handler</span>.received(ch, msg);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>handler</code>是<code>MultiMessageHandler</code>对象的实例，来看一下其<code>received</code>方法的实现</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">       <span class="keyword">if</span> (message <span class="keyword">instanceof</span> MultiMessage) &#123;</span><br><span class="line">           MultiMessage list = (MultiMessage)message;</span><br><span class="line">           <span class="keyword">for</span>(Object obj : list) &#123;</span><br><span class="line">               <span class="keyword">handler</span>.received(channel, obj);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="keyword">handler</span>.received(channel, message);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>handler</code>又是<code>HeartbeatHandler</code>类的实例</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> received(Channel channel, <span class="keyword">Object</span> message) <span class="keyword">throws</span> RemotingException &#123;</span><br><span class="line">    setReadTimestamp(channel);</span><br><span class="line">    <span class="keyword">if</span> (isHeartbeatRequest(message)) &#123;</span><br><span class="line">        Request req = (Request) message;</span><br><span class="line">        <span class="keyword">if</span> (req.isTwoWay()) &#123;</span><br><span class="line">            Response res = <span class="keyword">new</span> Response(req.getId(), req.getVersion());</span><br><span class="line">            res.setEvent(Response.HEARTBEAT_EVENT);</span><br><span class="line">            channel.send(res);</span><br><span class="line">            <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">                <span class="built_in">int</span> heartbeat = channel.getUrl().getParameter(Constants.HEARTBEAT_KEY, <span class="number">0</span>);</span><br><span class="line">                <span class="keyword">if</span>(logger.isDebugEnabled()) &#123;</span><br><span class="line">                    logger.debug(<span class="string">"Received heartbeat from remote channel "</span> + channel.getRemoteAddress()</span><br><span class="line">                                    + <span class="string">", cause: The channel has no data-transmission exceeds a heartbeat period"</span></span><br><span class="line">                                    + (heartbeat &gt; <span class="number">0</span> ? <span class="string">": "</span> + heartbeat + <span class="string">"ms"</span> : <span class="string">""</span>));</span><br><span class="line">                &#125;</span><br><span class="line">         &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (isHeartbeatResponse(message)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        	logger.debug(</span><br><span class="line">                <span class="keyword">new</span> StringBuilder(<span class="number">32</span>)</span><br><span class="line">                    .<span class="built_in">append</span>(<span class="string">"Receive heartbeat response in thread "</span>)</span><br><span class="line">                    .<span class="built_in">append</span>(Thread.currentThread().getName())</span><br><span class="line">                    .toString());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    handler.received(channel, message);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为不是心跳类的消息，所以执行<code>handler.received(channel, message)</code>继续这个调用链，这里的<code>handler</code>是<code>AllChannelHandler</code>类型的</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    ExecutorService cexecutor = getExecutorService();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        cexecutor.execute(<span class="keyword">new</span> ChannelEventRunnable(channel, <span class="keyword">handler</span>, ChannelState.RECEIVED, message));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ExecutionException(message, channel, getClass() + <span class="string">" error when process received event ."</span>, t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里终于结束了调用链，转而启动了一个线程池来执行任务，那我们来看看具体的任务线程<code>ChannelEventRunnable</code>中到底需要执行什么任务</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">public void run() &#123;</span><br><span class="line">    switch (<span class="keyword">state</span>) &#123;</span><br><span class="line">        case CONNECTED:</span><br><span class="line">            try&#123;</span><br><span class="line">                handler.connected(channel);</span><br><span class="line">            &#125;catch (Exception e) &#123;</span><br><span class="line">                logger.warn(<span class="string">"ChannelEventRunnable handle "</span> + <span class="keyword">state</span> + <span class="string">" operation error, channel is "</span> + channel, e);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        case DISCONNECTED:</span><br><span class="line">            try&#123;</span><br><span class="line">                handler.disconnected(channel);</span><br><span class="line">            &#125;catch (Exception e) &#123;</span><br><span class="line">                logger.warn(<span class="string">"ChannelEventRunnable handle "</span> + <span class="keyword">state</span> + <span class="string">" operation error, channel is "</span> + channel, e);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        case SENT:</span><br><span class="line">            try&#123;</span><br><span class="line">                handler.sent(channel,message);</span><br><span class="line">            &#125;catch (Exception e) &#123;</span><br><span class="line">                logger.warn(<span class="string">"ChannelEventRunnable handle "</span> + <span class="keyword">state</span> + <span class="string">" operation error, channel is "</span> + channel</span><br><span class="line">                        + <span class="string">", message is "</span>+ message,e);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        case RECEIVED:</span><br><span class="line">            try&#123;</span><br><span class="line">                handler.received(channel, message);</span><br><span class="line">            &#125;catch (Exception e) &#123;</span><br><span class="line">                logger.warn(<span class="string">"ChannelEventRunnable handle "</span> + <span class="keyword">state</span> + <span class="string">" operation error, channel is "</span> + channel</span><br><span class="line">                        + <span class="string">", message is "</span>+ message,e);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        case CAUGHT:</span><br><span class="line">            try&#123;</span><br><span class="line">                handler.caught(channel, exception);</span><br><span class="line">            &#125;catch (Exception e) &#123;</span><br><span class="line">                logger.warn(<span class="string">"ChannelEventRunnable handle "</span> + <span class="keyword">state</span> + <span class="string">" operation error, channel is "</span>+ channel</span><br><span class="line">                        + <span class="string">", message is: "</span> + message + <span class="string">", exception is "</span> + exception,e);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            logger.warn(<span class="string">"unknown state: "</span> + <span class="keyword">state</span> + <span class="string">", message is "</span> + message);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里传入的是<code>RECEIVED</code>状态，执行对应分支又是调用<code>handler.received(channel, message)</code>，好吧继续。。。<br>这里的<code>handler</code>是<code>DecodeHandler</code>的实例，继续跟下去</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Decodeable) &#123;</span><br><span class="line">        decode(message);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Request) &#123;</span><br><span class="line">        decode(((Request)message).getData());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Response) &#123;</span><br><span class="line">        decode( ((Response)message).getResult());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">handler</span>.received(channel, message);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用链还在继续，这次的<code>handler</code>是<code>HeaderExchangeHandler</code>类型</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());</span><br><span class="line">    ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Request) &#123;</span><br><span class="line">            <span class="comment">// handle request.</span></span><br><span class="line">            Request request = (Request) message;</span><br><span class="line">            <span class="comment">//判断是心跳还是正常请求</span></span><br><span class="line">            <span class="keyword">if</span> (request.isEvent()) &#123;</span><br><span class="line">                handlerEvent(channel, request);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (request.isTwoWay()) &#123;</span><br><span class="line">                    Response response = handleRequest(exchangeChannel, request);</span><br><span class="line">                    channel.send(response);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">handler</span>.received(exchangeChannel, request.getData());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="function"><span class="keyword">else</span> <span class="title">if</span> <span class="params">(message <span class="keyword">instanceof</span> Response)</span> </span>&#123;</span><br><span class="line">            handleResponse(channel, (Response) message);</span><br><span class="line">        &#125; <span class="function"><span class="keyword">else</span> <span class="title">if</span> <span class="params">(message <span class="keyword">instanceof</span> String)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (isClientSide(channel)) &#123;</span><br><span class="line">                Exception e = <span class="keyword">new</span> Exception(<span class="string">"Dubbo client can not supported string message: "</span> + message + <span class="string">" in channel: "</span> + channel + <span class="string">", url: "</span> + channel.getUrl());</span><br><span class="line">                logger.<span class="keyword">error</span>(e.getMessage(), e);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                String echo = <span class="keyword">handler</span>.telnet(channel, (String) message);</span><br><span class="line">                <span class="keyword">if</span> (echo != <span class="keyword">null</span> &amp;&amp; echo.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    channel.send(echo);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">handler</span>.received(exchangeChannel, message);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        HeaderExchangeChannel.removeChannelIfDisconnected(channel);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正常同步请求会开始执行<code>handleRequest(exchangeChannel, request)</code>处理请求，并通过<code>channel.send(response)</code>回复结果，来重点看一下<code>handleRequest</code>方法</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Response</span> handleRequest(<span class="type">ExchangeChannel</span> channel, <span class="type">Request</span> req) throws <span class="type">RemotingException</span> &#123;</span><br><span class="line">    <span class="type">Response</span> res = new <span class="type">Response</span>(req.getId(), req.getVersion());</span><br><span class="line">        //处理异常的请求</span><br><span class="line">        <span class="keyword">if</span> (req.isBroken()) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="class"><span class="keyword">data</span> = req.getData();</span></span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> msg;</span><br><span class="line">        <span class="keyword">if</span> (<span class="class"><span class="keyword">data</span> == null) msg = null;</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (<span class="class"><span class="keyword">data</span> instanceof <span class="type">Throwable</span>) msg = <span class="type">StringUtils</span>.toString((<span class="type">Throwable</span>) <span class="keyword">data</span>);</span></span><br><span class="line">        <span class="keyword">else</span> msg = <span class="class"><span class="keyword">data</span>.toString();</span></span><br><span class="line">        res.setErrorMessage(<span class="string">"Fail to decode request due to: "</span> + msg);</span><br><span class="line">        res.setStatus(<span class="type">Response</span>.<span class="type">BAD_REQUEST</span>);</span><br><span class="line"></span><br><span class="line">        return res;</span><br><span class="line">    &#125;</span><br><span class="line">    // find handler by message <span class="keyword">class</span>.</span><br><span class="line">    <span class="type">Object</span> msg = req.getData();</span><br><span class="line">    try &#123;</span><br><span class="line">        // handle <span class="class"><span class="keyword">data</span>.</span></span><br><span class="line">        <span class="type">Object</span> result = handler.reply(channel, msg);</span><br><span class="line">        res.setStatus(<span class="type">Response</span>.<span class="type">OK</span>);</span><br><span class="line">        res.setResult(result);</span><br><span class="line">    &#125; catch (<span class="type">Throwable</span> e) &#123;</span><br><span class="line">        res.setStatus(<span class="type">Response</span>.<span class="type">SERVICE_ERROR</span>);</span><br><span class="line">        res.setErrorMessage(<span class="type">StringUtils</span>.toString(e));</span><br><span class="line">    &#125;</span><br><span class="line">    return res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出正常请求将由<code>handler.reply(channel, msg)</code>处理，这里的<code>handler</code>是<code>DubboProtocol</code>中的一个<code>ExchangeHandlerAdapter</code>实现，其<code>reply</code>方法如下</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">Object</span> reply(ExchangeChannel channel, <span class="keyword">Object</span> message) <span class="keyword">throws</span> RemotingException &#123;</span><br><span class="line">    <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Invocation) &#123;</span><br><span class="line">        Invocation inv = (Invocation) message;</span><br><span class="line">        <span class="comment">//通过方法名获取Invoker</span></span><br><span class="line">        Invoker&lt;?&gt; invoker = getInvoker(channel, inv);</span><br><span class="line">        <span class="comment">//如果是callback 需要处理高版本调用低版本的问题</span></span><br><span class="line">        <span class="keyword">if</span> (Boolean.TRUE.toString().equals(inv.getAttachments().<span class="built_in">get</span>(IS_CALLBACK_SERVICE_INVOKE)))&#123;</span><br><span class="line">            <span class="keyword">String</span> methodsStr = invoker.getUrl().getParameters().<span class="built_in">get</span>(<span class="string">"methods"</span>);</span><br><span class="line">            <span class="built_in">boolean</span> hasMethod = <span class="keyword">false</span>;</span><br><span class="line">            <span class="keyword">if</span> (methodsStr == <span class="keyword">null</span> || methodsStr.indexOf(<span class="string">","</span>) == <span class="number">-1</span>)&#123;</span><br><span class="line">                hasMethod = inv.getMethodName().equals(methodsStr);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">String</span>[] methods = methodsStr.<span class="built_in">split</span>(<span class="string">","</span>);</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">String</span> method : methods)&#123;</span><br><span class="line">                    <span class="keyword">if</span> (inv.getMethodName().equals(method))&#123;</span><br><span class="line">                        hasMethod = <span class="keyword">true</span>;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (!hasMethod)&#123;</span><br><span class="line">                logger.warn(<span class="keyword">new</span> IllegalStateException(<span class="string">"The methodName "</span>+inv.getMethodName()+<span class="string">" not found in callback service interface ,invoke will be ignored. please update the api interface. url is:"</span> + invoker.getUrl()) +<span class="string">" ,invocation is :"</span>+inv );</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());</span><br><span class="line">        <span class="keyword">return</span> invoker.invoke(inv);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(channel, <span class="string">"Unsupported request: "</span> + message == <span class="keyword">null</span> ? <span class="keyword">null</span> : (message.getClass().getName() + <span class="string">": "</span> + message) + <span class="string">", channel: consumer: "</span> + channel.getRemoteAddress() + <span class="string">" --&gt; provider: "</span> + channel.getLocalAddress());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里一共做了两件事，先通过<code>getInvoker(channel, inv)</code>获取具体的<code>invoker</code>，再通过<code>invoker.invoke(inv)</code>执行获取结果，先来看一下<code>getInvoker(channel, inv)</code></p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">Invoker&lt;?&gt; getInvoker(Channel channel, Invocation inv) <span class="keyword">throws</span> RemotingException&#123;</span><br><span class="line">    <span class="built_in">boolean</span> isCallBackServiceInvoke = <span class="keyword">false</span>;</span><br><span class="line">    <span class="built_in">boolean</span> isStubServiceInvoke = <span class="keyword">false</span>;</span><br><span class="line">    <span class="built_in">int</span> port = channel.getLocalAddress().getPort();</span><br><span class="line">    <span class="keyword">String</span> path = inv.getAttachments().<span class="built_in">get</span>(Constants.PATH_KEY);</span><br><span class="line">    <span class="comment">//如果是客户端的回调服务.</span></span><br><span class="line">    isStubServiceInvoke = Boolean.TRUE.toString().equals(inv.getAttachments().<span class="built_in">get</span>(Constants.STUB_EVENT_KEY));</span><br><span class="line">    <span class="keyword">if</span> (isStubServiceInvoke)&#123;</span><br><span class="line">        port = channel.getRemoteAddress().getPort();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//callback</span></span><br><span class="line">    isCallBackServiceInvoke = isClientSide(channel) &amp;&amp; !isStubServiceInvoke;</span><br><span class="line">    <span class="keyword">if</span>(isCallBackServiceInvoke)&#123;</span><br><span class="line">        path = inv.getAttachments().<span class="built_in">get</span>(Constants.PATH_KEY)+<span class="string">"."</span>+inv.getAttachments().<span class="built_in">get</span>(Constants.CALLBACK_SERVICE_KEY);</span><br><span class="line">        inv.getAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">String</span> serviceKey = serviceKey(port, path, inv.getAttachments().<span class="built_in">get</span>(Constants.VERSION_KEY), inv.getAttachments().<span class="built_in">get</span>(Constants.GROUP_KEY));</span><br><span class="line"></span><br><span class="line">    DubboExporter&lt;?&gt; exporter = (DubboExporter&lt;?&gt;) exporterMap.<span class="built_in">get</span>(serviceKey);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (exporter == <span class="keyword">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(channel, <span class="string">"Not found exported service: "</span> + serviceKey + <span class="string">" in "</span> + exporterMap.keySet() + <span class="string">", may be version or group mismatch "</span> + <span class="string">", channel: consumer: "</span> + channel.getRemoteAddress() + <span class="string">" --&gt; provider: "</span> + channel.getLocalAddress() + <span class="string">", message:"</span> + inv);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> exporter.getInvoker();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里又看到了熟悉的<code>exporterMap</code>，之前讲生产者初始化的时候就说过这个map中放入了封装过的<code>Invoker</code>对象<code>exporter</code>，现在又把它取了出了并通过<code>getInvoker()</code>方法获得封装在其中的<code>Invoker</code>对象。<br>接着来看<code>invoker.invoke(inv)</code>方法，其实现首先在<code>InvokerWrapper</code>类中</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function">Result <span class="title">invoke</span><span class="params">(Invocation invocation)</span> <span class="keyword">throws</span> RpcException </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">return</span> invoker.<span class="title">invoke</span><span class="params">(invocation)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后会调用到<code>AbstractProxyInvoker</code>中的<code>invoke</code>方法</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Result invoke(Invocation invocation) throws RpcException &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">RpcResult</span>(doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments()));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InvocationTargetException e) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">RpcResult</span>(e.getTargetException());</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">RpcException</span>(<span class="string">"Failed to invoke remote proxy method "</span> + invocation.getMethodName() + <span class="string">" to "</span> + getUrl() + <span class="string">", cause: "</span> + e.getMessage(), e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>doInvoke</code>方法的实现在<code>JavassistProxyFactory</code>中<code>getInvoker</code>方法中</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">public</span> &lt;<span class="type">T</span>&gt; <span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; getInvoker(<span class="type">T</span> proxy, <span class="type">Class</span>&lt;<span class="type">T</span>&gt; <span class="class"><span class="keyword">type</span>, <span class="type">URL</span> url) &#123;</span></span><br><span class="line"><span class="class">    // <span class="type">TODO</span> <span class="type">Wrapper</span>类不能正确处理带$的类名</span></span><br><span class="line"><span class="class">    <span class="title">final</span> <span class="type">Wrapper</span> <span class="title">wrapper</span> = <span class="type">Wrapper</span>.<span class="title">getWrapper</span>(<span class="title">proxy</span>.<span class="title">getClass</span>().<span class="title">getName</span>().<span class="title">indexOf</span>('$') &lt; 0 ? <span class="title">proxy</span>.<span class="title">getClass</span>() : <span class="title">type</span>);</span></span><br><span class="line"><span class="class">    <span class="title">return</span> <span class="title">new</span> <span class="type">AbstractProxyInvoker</span>&lt;<span class="type">T</span>&gt;(<span class="title">proxy</span>, <span class="title">type</span>, <span class="title">url</span>) &#123;</span></span><br><span class="line"><span class="class">        @<span class="type">Override</span></span></span><br><span class="line"><span class="class">        <span class="title">protected</span> <span class="type">Object</span> <span class="title">doInvoke</span>(<span class="type">T</span> <span class="title">proxy</span>, <span class="type">String</span> <span class="title">methodName</span>, </span></span><br><span class="line"><span class="class">                                  <span class="type">Class</span>&lt;?&gt;[] <span class="title">parameterTypes</span>, </span></span><br><span class="line"><span class="class">                                  <span class="type">Object</span>[] <span class="title">arguments</span>) <span class="title">throws</span> <span class="type">Throwable</span> &#123;</span></span><br><span class="line"><span class="class">            <span class="title">return</span> <span class="title">wrapper</span>.<span class="title">invokeMethod</span>(<span class="title">proxy</span>, <span class="title">methodName</span>, <span class="title">parameterTypes</span>, <span class="title">arguments</span>);</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里根据传入的 <code>proxy</code>对象的类信息创建对它的包装对象<code>Wrapper</code><br>并调用其<code>invokeMethod</code>方法，通过传入的参数来调用<code>proxy</code>对象的对应方法，返回调用结果，也就是执行具体的业务。<br>完成<code>handleRequest(exchangeChannel, request)</code>方法的解析后，回到<code>HeaderExchangeHandler</code>类中接着来看一下<code>channel.send(response)</code>，这里的<code>channel</code>传入的是<code>NettyChannel</code>类型的对象，<code>send</code>方法的实现在其父类的父类<code>AbstractPeer</code>中，来看一下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">send</span><span class="params">(Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    send(message, url.getParameter(Constants.SENT_KEY, <span class="keyword">false</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其具体实现又在<code>NettyChannel</code>中</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">send</span><span class="params">(Object message, <span class="keyword">boolean</span> sent)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.send(message, sent);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">boolean</span> success = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">int</span> timeout = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        ChannelFuture future = channel.write(message);</span><br><span class="line">        <span class="keyword">if</span> (sent) &#123;</span><br><span class="line">            timeout = getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);</span><br><span class="line">            success = future.await(timeout);</span><br><span class="line">        &#125;</span><br><span class="line">        Throwable cause = future.getCause();</span><br><span class="line">        <span class="keyword">if</span> (cause != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> cause;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(<span class="keyword">this</span>, <span class="string">"Failed to send message "</span> + message + <span class="string">" to "</span> + getRemoteAddress() + <span class="string">", cause: "</span> + e.getMessage(), e);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(! success) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(<span class="keyword">this</span>, <span class="string">"Failed to send message "</span> + message + <span class="string">" to "</span> + getRemoteAddress()</span><br><span class="line">                + <span class="string">"in timeout("</span> + timeout + <span class="string">"ms) limit"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到业务处理结果最后通过<code>ChannelFuture</code>对象进行了发送，到此生产者端的任务就完成了。</p>
+<h5 id="消费者获取调用结果"><a href="#消费者获取调用结果" class="headerlink" title="消费者获取调用结果"></a>消费者获取调用结果</h5><p>这里消费者端通过NETTY从生产者端获取数据的流程和之前的如出一辙，调用链直到<code>HeaderExchangeHandler</code>之前都是一样的，我们先来回顾一下<code>HeaderExchangeHandler</code>的<code>received</code>方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">        channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());</span><br><span class="line">        ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Request) &#123;</span><br><span class="line">                <span class="comment">// handle request.</span></span><br><span class="line">                Request request = (Request) message;</span><br><span class="line">                <span class="comment">//判断是心跳还是正常请求</span></span><br><span class="line">                <span class="keyword">if</span> (request.isEvent()) &#123;</span><br><span class="line">                    handlerEvent(channel, request);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (request.isTwoWay()) &#123;</span><br><span class="line">                        Response response = handleRequest(exchangeChannel, request);</span><br><span class="line">                        channel.send(response);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        <span class="keyword">handler</span>.received(exchangeChannel, request.getData());</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="function"><span class="keyword">else</span> <span class="title">if</span> <span class="params">(message <span class="keyword">instanceof</span> Response)</span> </span>&#123;</span><br><span class="line">                handleResponse(channel, (Response) message);</span><br><span class="line">            &#125; <span class="function"><span class="keyword">else</span> <span class="title">if</span> <span class="params">(message <span class="keyword">instanceof</span> String)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">if</span> (isClientSide(channel)) &#123;</span><br><span class="line">                    Exception e = <span class="keyword">new</span> Exception(<span class="string">"Dubbo client can not supported string message: "</span> + message + <span class="string">" in channel: "</span> + channel + <span class="string">", url: "</span> + channel.getUrl());</span><br><span class="line">                    logger.<span class="keyword">error</span>(e.getMessage(), e);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    String echo = <span class="keyword">handler</span>.telnet(channel, (String) message);</span><br><span class="line">                    <span class="keyword">if</span> (echo != <span class="keyword">null</span> &amp;&amp; echo.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                        channel.send(echo);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">handler</span>.received(exchangeChannel, message);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            HeaderExchangeChannel.removeChannelIfDisconnected(channel);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>之前走的是Request分支，这次因为是响应消息走的是Response分支，那么来看一下<code>handleResponse(channel, (Response) message)</code>的具体实现</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">static void handleResponse(Channel channel, <span class="built_in">Response</span> <span class="built_in">response</span>) throws RemotingException &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">response</span> != <span class="literal">null</span> &amp;&amp; !<span class="built_in">response</span>.isHeartbeat()) &#123;</span><br><span class="line">        DefaultFuture.received(channel, <span class="built_in">response</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续跟进去看<code>received</code>方法</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">received</span>(<span class="params">Channel channel, Response response</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        DefaultFuture future = FUTURES.<span class="keyword">remove</span>(response.getId());</span><br><span class="line">        <span class="keyword">if</span> (future != <span class="literal">null</span>) &#123;</span><br><span class="line">            future.doReceived(response);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            logger.warn(<span class="string">"The timeout response finally returned at "</span> </span><br><span class="line">                        + (<span class="keyword">new</span> SimpleDateFormat(<span class="string">"yyyy-MM-dd HH:mm:ss.SSS"</span>).format(<span class="keyword">new</span> Date())) </span><br><span class="line">                        + <span class="string">", response "</span> + response </span><br><span class="line">                        + (channel == <span class="literal">null</span> ? <span class="string">""</span> : <span class="string">", channel: "</span> + channel.getLocalAddress() </span><br><span class="line">                            + <span class="string">" -&gt; "</span> + channel.getRemoteAddress()));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        CHANNELS.<span class="keyword">remove</span>(response.getId());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看<code>doReceived</code>干了什么</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doReceived</span>(<span class="params">Response res</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">lock</span>.<span class="keyword">lock</span>();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        response = res;</span><br><span class="line">        <span class="keyword">if</span> (done != <span class="literal">null</span>) &#123;</span><br><span class="line">            done.signal();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">lock</span>.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (callback != <span class="literal">null</span>) &#123;</span><br><span class="line">        invokeCallback(callback);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到这里把执行结果赋值给<code>response</code>，正好应证了我们之前的猜想，消费者的同步阻塞也就可以继续执行下去了，这也算是非常经典的异步转同步的实现方案了吧。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>本文把消费者端和生产者端交互的大概流程进行了讲解，流程主要分为三个部分，分别是：消费者发起调用请求、生产者响应调用请求和消费者获取调用结果，概括一下就是消费者通过生成的代理对象调用<code>invoke</code>方法通过Netty的通道去请求生产者的<code>exporter</code>进行执行，并且通过<code>future</code>的方式将异步的交互转为了同步响应。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dubbo/" rel="tag"># dubbo</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/08/dubbo2/" rel="next" title="Dubbo消费者初始化">
+                <i class="fa fa-chevron-left"></i> Dubbo消费者初始化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/07/08/dubbo3/" rel="prev" title="Dubbo生产者初始化">
+                Dubbo生产者初始化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码解析"><span class="nav-number">2.</span> <span class="nav-text">源码解析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#消费者发起调用请求"><span class="nav-number">2.1.</span> <span class="nav-text">消费者发起调用请求</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#生产者响应调用请求"><span class="nav-number">2.2.</span> <span class="nav-text">生产者响应调用请求</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#消费者获取调用结果"><span class="nav-number">2.3.</span> <span class="nav-text">消费者获取调用结果</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>

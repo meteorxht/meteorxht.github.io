@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言消费者初始化也就是对&amp;lt;dubbo:reference&amp;gt;中的内容进行解析和初始化，根据Dubbo的官方文档描述，其对应的配置类为com.alibaba.dubbo.config.ReferenceConfig，但它的入口在哪里呢？ 由于Dubbo和Spring是高度整合的，因此Spring中实现InitializingBean的方式是一个很好的初始化方式，找了一下确实找到了一个类Re">
+<meta name="keywords" content="dubbo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dubbo消费者初始化">
+<meta property="og:url" content="http://yoursite.com/2019/07/08/dubbo2/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="前言消费者初始化也就是对&amp;lt;dubbo:reference&amp;gt;中的内容进行解析和初始化，根据Dubbo的官方文档描述，其对应的配置类为com.alibaba.dubbo.config.ReferenceConfig，但它的入口在哪里呢？ 由于Dubbo和Spring是高度整合的，因此Spring中实现InitializingBean的方式是一个很好的初始化方式，找了一下确实找到了一个类Re">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-11-04T14:19:51.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dubbo消费者初始化">
+<meta name="twitter:description" content="前言消费者初始化也就是对&amp;lt;dubbo:reference&amp;gt;中的内容进行解析和初始化，根据Dubbo的官方文档描述，其对应的配置类为com.alibaba.dubbo.config.ReferenceConfig，但它的入口在哪里呢？ 由于Dubbo和Spring是高度整合的，因此Spring中实现InitializingBean的方式是一个很好的初始化方式，找了一下确实找到了一个类Re">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/07/08/dubbo2/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Dubbo消费者初始化 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/08/dubbo2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dubbo消费者初始化
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-08 22:02:36" itemprop="dateCreated datePublished" datetime="2019-07-08T22:02:36+08:00">2019-07-08</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/源码解析/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2019/07/08/dubbo2/" class="leancloud_visitors" data-flag-title="Dubbo消费者初始化">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h4><p>消费者初始化也就是对<code>&lt;dubbo:reference&gt;</code>中的内容进行解析和初始化，根据Dubbo的官方文档描述，其对应的配置类为<code>com.alibaba.dubbo.config.ReferenceConfig</code>，但它的入口在哪里呢？</p>
+<p>由于Dubbo和Spring是高度整合的，因此Spring中实现<code>InitializingBean</code>的方式是一个很好的初始化方式，找了一下确实找到了一个类<code>ReferenceBean</code>，让我们来看一下它的定义</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">ReferenceBean&lt;T&gt;</span> <span class="keyword">extends</span> <span class="title">ReferenceConfig&lt;T&gt;</span> <span class="title">implements</span> <span class="title">FactoryBean</span>, <span class="title">ApplicationContextAware</span>, <span class="title">InitializingBean</span>, <span class="title">DisposableBean</span></span></span><br></pre></td></tr></table></figure>
+
+<p>我们看到了<code>InitializingBean</code>加上<code>ReferenceConfig</code>，几乎可以肯定这就是我们要找的入口，那么开始吧</p>
+<h4 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h4><p>说到<code>InitializingBean</code>第一反应肯定是找<code>afterPropertiesSet()</code>方法，来看一下</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings</span>(&#123; <span class="string">"unchecked"</span>&#125;)</span><br><span class="line"> public <span class="keyword">void</span> afterPropertiesSet() throws Exception &#123;</span><br><span class="line">     <span class="keyword">if</span> (getConsumer() == <span class="keyword">null</span>) &#123;</span><br><span class="line">         <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, ConsumerConfig&gt; consumerConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span>  : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConsumerConfig.<span class="keyword">class</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">         <span class="keyword">if</span> (consumerConfigMap != <span class="keyword">null</span> &amp;&amp; consumerConfigMap.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             ConsumerConfig consumerConfig = <span class="keyword">null</span>;</span><br><span class="line">             <span class="keyword">for</span> (ConsumerConfig config : consumerConfigMap.values()) &#123;</span><br><span class="line">                 <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                     <span class="keyword">if</span> (consumerConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                         <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate consumer configs: "</span> + consumerConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                     &#125;</span><br><span class="line">                     consumerConfig = config;</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="keyword">if</span> (consumerConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                 setConsumer(consumerConfig);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (getApplication() == <span class="keyword">null</span></span><br><span class="line">             &amp;&amp; (getConsumer() == <span class="keyword">null</span> || getConsumer().getApplication() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">         <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, ApplicationConfig&gt; applicationConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.<span class="keyword">class</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">         <span class="keyword">if</span> (applicationConfigMap != <span class="keyword">null</span> &amp;&amp; applicationConfigMap.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             ApplicationConfig applicationConfig = <span class="keyword">null</span>;</span><br><span class="line">             <span class="keyword">for</span> (ApplicationConfig config : applicationConfigMap.values()) &#123;</span><br><span class="line">                 <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                     <span class="keyword">if</span> (applicationConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                         <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate application configs: "</span> + applicationConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                     &#125;</span><br><span class="line">                     applicationConfig = config;</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="keyword">if</span> (applicationConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                 setApplication(applicationConfig);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (getModule() == <span class="keyword">null</span></span><br><span class="line">             &amp;&amp; (getConsumer() == <span class="keyword">null</span> || getConsumer().getModule() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">         <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, ModuleConfig&gt; moduleConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.<span class="keyword">class</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">         <span class="keyword">if</span> (moduleConfigMap != <span class="keyword">null</span> &amp;&amp; moduleConfigMap.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             ModuleConfig moduleConfig = <span class="keyword">null</span>;</span><br><span class="line">             <span class="keyword">for</span> (ModuleConfig config : moduleConfigMap.values()) &#123;</span><br><span class="line">                 <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                     <span class="keyword">if</span> (moduleConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                         <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate module configs: "</span> + moduleConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                     &#125;</span><br><span class="line">                     moduleConfig = config;</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="keyword">if</span> (moduleConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                 setModule(moduleConfig);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> ((getRegistries() == <span class="keyword">null</span> || getRegistries().size() == <span class="number">0</span>)</span><br><span class="line">             &amp;&amp; (getConsumer() == <span class="keyword">null</span> || getConsumer().getRegistries() == <span class="keyword">null</span> || getConsumer().getRegistries().size() == <span class="number">0</span>)</span><br><span class="line">             &amp;&amp; (getApplication() == <span class="keyword">null</span> || getApplication().getRegistries() == <span class="keyword">null</span> || getApplication().getRegistries().size() == <span class="number">0</span>)) &#123;</span><br><span class="line">         <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, RegistryConfig&gt; registryConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.<span class="keyword">class</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">         <span class="keyword">if</span> (registryConfigMap != <span class="keyword">null</span> &amp;&amp; registryConfigMap.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             <span class="built_in">List</span>&lt;RegistryConfig&gt; registryConfigs = <span class="keyword">new</span> ArrayList&lt;RegistryConfig&gt;();</span><br><span class="line">             <span class="keyword">for</span> (RegistryConfig config : registryConfigMap.values()) &#123;</span><br><span class="line">                 <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                     registryConfigs.add(config);</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="keyword">if</span> (registryConfigs != <span class="keyword">null</span> &amp;&amp; registryConfigs.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                 <span class="keyword">super</span>.setRegistries(registryConfigs);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (getMonitor() == <span class="keyword">null</span></span><br><span class="line">             &amp;&amp; (getConsumer() == <span class="keyword">null</span> || getConsumer().getMonitor() == <span class="keyword">null</span>)</span><br><span class="line">             &amp;&amp; (getApplication() == <span class="keyword">null</span> || getApplication().getMonitor() == <span class="keyword">null</span>)) &#123;</span><br><span class="line">         <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, MonitorConfig&gt; monitorConfigMap = applicationContext == <span class="keyword">null</span> ? <span class="keyword">null</span> : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.<span class="keyword">class</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</span><br><span class="line">         <span class="keyword">if</span> (monitorConfigMap != <span class="keyword">null</span> &amp;&amp; monitorConfigMap.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             MonitorConfig monitorConfig = <span class="keyword">null</span>;</span><br><span class="line">             <span class="keyword">for</span> (MonitorConfig config : monitorConfigMap.values()) &#123;</span><br><span class="line">                 <span class="keyword">if</span> (config.isDefault() == <span class="keyword">null</span> || config.isDefault().booleanValue()) &#123;</span><br><span class="line">                     <span class="keyword">if</span> (monitorConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                         <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Duplicate monitor configs: "</span> + monitorConfig + <span class="string">" and "</span> + config);</span><br><span class="line">                     &#125;</span><br><span class="line">                     monitorConfig = config;</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="keyword">if</span> (monitorConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">                 setMonitor(monitorConfig);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     Boolean b = isInit();</span><br><span class="line">     <span class="keyword">if</span> (b == <span class="keyword">null</span> &amp;&amp; getConsumer() != <span class="keyword">null</span>) &#123;</span><br><span class="line">         b = getConsumer().isInit();</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (b != <span class="keyword">null</span> &amp;&amp; b.booleanValue()) &#123;</span><br><span class="line">         getObject();</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>前面一大片的代码都是在做赋值，分别调用了<code>setConsumer</code>、<code>setApplication</code>、<code>setModule</code>、<code>setRegistries</code>和<code>setMonitor</code>这几个方法，全部都是<code>AbstractInterfaceConfig</code>类中的set方法，最核心的还是最后的<code>getObject()</code>方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function">Object <span class="title">getObject</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">return</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里终于调用到了父类<code>ReferenceConfig</code>的<code>get()</code>方法，继续来看</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> synchronized T <span class="title">get</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (destroyed)&#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Already destroyed!"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    	<span class="keyword">if</span> (<span class="keyword">ref</span> == <span class="literal">null</span>) &#123;</span><br><span class="line">    		init();</span><br><span class="line">    	&#125;</span><br><span class="line">    	<span class="keyword">return</span> <span class="keyword">ref</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的ref定义如下</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接口代理类引用</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> T ref;</span><br></pre></td></tr></table></figure>
+
+<p>具体来看看<code>init()</code>方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">private</span> <span class="keyword">void</span> init() &#123;</span><br><span class="line">     </span><br><span class="line">     <span class="comment">// 获取消费者全局配置</span></span><br><span class="line"> 	checkDefault();</span><br><span class="line">     appendProperties(<span class="keyword">this</span>);</span><br><span class="line">     <span class="keyword">if</span> (getGeneric() == <span class="keyword">null</span> &amp;&amp; getConsumer() != <span class="keyword">null</span>) &#123;</span><br><span class="line">         setGeneric(getConsumer().getGeneric());</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (ProtocolUtils.isGeneric(getGeneric())) &#123;</span><br><span class="line">         interfaceClass = GenericService.class;</span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">         <span class="keyword">try</span> &#123;</span><br><span class="line">	interfaceClass = Class.forName(interfaceName, <span class="keyword">true</span>, Thread.currentThread()</span><br><span class="line">	        .getContextClassLoader());</span><br><span class="line">&#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">	<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(e.getMessage(), e);</span><br><span class="line">&#125;</span><br><span class="line">         checkInterfaceAndMethods(interfaceClass, methods);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">String</span> resolve = System.getProperty(interfaceName);</span><br><span class="line">     <span class="keyword">String</span> resolveFile = <span class="keyword">null</span>;</span><br><span class="line">     <span class="keyword">if</span> (resolve == <span class="keyword">null</span> || resolve.length() == <span class="number">0</span>) &#123;</span><br><span class="line">      resolveFile = System.getProperty(<span class="string">"dubbo.resolve.file"</span>);</span><br><span class="line">      <span class="keyword">if</span> (resolveFile == <span class="keyword">null</span> || resolveFile.length() == <span class="number">0</span>) &#123;</span><br><span class="line">      	File userResolveFile = <span class="keyword">new</span> File(<span class="keyword">new</span> File(System.getProperty(<span class="string">"user.home"</span>)), <span class="string">"dubbo-resolve.properties"</span>);</span><br><span class="line">      	<span class="keyword">if</span> (userResolveFile.exists()) &#123;</span><br><span class="line">      		resolveFile = userResolveFile.getAbsolutePath();</span><br><span class="line">      	&#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (resolveFile != <span class="keyword">null</span> &amp;&amp; resolveFile.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      	Properties properties = <span class="keyword">new</span> Properties();</span><br><span class="line">      	FileInputStream fis = <span class="keyword">null</span>;</span><br><span class="line">      	<span class="keyword">try</span> &#123;</span><br><span class="line">      	    fis = <span class="keyword">new</span> FileInputStream(<span class="keyword">new</span> File(resolveFile));</span><br><span class="line">		properties.load(fis);</span><br><span class="line">	&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Unload "</span> + resolveFile + <span class="string">", cause: "</span> + e.getMessage(), e);</span><br><span class="line">	&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">	    <span class="keyword">try</span> &#123;</span><br><span class="line">                     <span class="keyword">if</span>(<span class="keyword">null</span> != fis) fis.close();</span><br><span class="line">                 &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                     logger.warn(e.getMessage(), e);</span><br><span class="line">                 &#125;</span><br><span class="line">	&#125;</span><br><span class="line">      	resolve = properties.getProperty(interfaceName);</span><br><span class="line">      &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="comment">/**</span></span><br><span class="line"><span class="comment">      *   略去部分代码</span></span><br><span class="line"><span class="comment">      */</span></span><br><span class="line">      </span><br><span class="line">     checkApplication();</span><br><span class="line">     checkStubAndMock(interfaceClass);</span><br><span class="line">     Map&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; <span class="built_in">map</span> = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;();</span><br><span class="line">     Map&lt;<span class="keyword">Object</span>, <span class="keyword">Object</span>&gt; attributes = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;<span class="keyword">Object</span>, <span class="keyword">Object</span>&gt;();</span><br><span class="line">     <span class="built_in">map</span>.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);</span><br><span class="line">     <span class="built_in">map</span>.put(Constants.DUBBO_VERSION_KEY, Version.getVersion());</span><br><span class="line">     <span class="built_in">map</span>.put(Constants.TIMESTAMP_KEY, <span class="keyword">String</span>.valueOf(System.currentTimeMillis()));</span><br><span class="line">     <span class="keyword">if</span> (ConfigUtils.getPid() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">         <span class="built_in">map</span>.put(Constants.PID_KEY, <span class="keyword">String</span>.valueOf(ConfigUtils.getPid()));</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (! isGeneric()) &#123;</span><br><span class="line">         <span class="keyword">String</span> revision = Version.getVersion(interfaceClass, version);</span><br><span class="line">         <span class="keyword">if</span> (revision != <span class="keyword">null</span> &amp;&amp; revision.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">             <span class="built_in">map</span>.put(<span class="string">"revision"</span>, revision);</span><br><span class="line">         &#125;</span><br><span class="line"></span><br><span class="line">         <span class="keyword">String</span>[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();</span><br><span class="line">         <span class="keyword">if</span>(methods.length == <span class="number">0</span>) &#123;</span><br><span class="line">             logger.warn(<span class="string">"NO method found in service interface "</span> + interfaceClass.getName());</span><br><span class="line">             <span class="built_in">map</span>.put(<span class="string">"methods"</span>, Constants.ANY_VALUE);</span><br><span class="line">         &#125;</span><br><span class="line">         <span class="keyword">else</span> &#123;</span><br><span class="line">             <span class="built_in">map</span>.put(<span class="string">"methods"</span>, StringUtils.<span class="built_in">join</span>(<span class="keyword">new</span> HashSet&lt;<span class="keyword">String</span>&gt;(Arrays.asList(methods)), <span class="string">","</span>));</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="built_in">map</span>.put(Constants.INTERFACE_KEY, interfaceName);</span><br><span class="line">     appendParameters(<span class="built_in">map</span>, application);</span><br><span class="line">     appendParameters(<span class="built_in">map</span>, module);</span><br><span class="line">     appendParameters(<span class="built_in">map</span>, consumer, Constants.DEFAULT_KEY);</span><br><span class="line">     appendParameters(<span class="built_in">map</span>, <span class="keyword">this</span>);</span><br><span class="line">     <span class="keyword">String</span> prifix = StringUtils.getServiceKey(<span class="built_in">map</span>);</span><br><span class="line">     <span class="keyword">if</span> (methods != <span class="keyword">null</span> &amp;&amp; methods.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">         <span class="keyword">for</span> (MethodConfig method : methods) &#123;</span><br><span class="line">             appendParameters(<span class="built_in">map</span>, method, method.getName());</span><br><span class="line">             <span class="keyword">String</span> retryKey = method.getName() + <span class="string">".retry"</span>;</span><br><span class="line">             <span class="keyword">if</span> (<span class="built_in">map</span>.containsKey(retryKey)) &#123;</span><br><span class="line">                 <span class="keyword">String</span> retryValue = <span class="built_in">map</span>.remove(retryKey);</span><br><span class="line">                 <span class="keyword">if</span> (<span class="string">"false"</span>.equals(retryValue)) &#123;</span><br><span class="line">                     <span class="built_in">map</span>.put(method.getName() + <span class="string">".retries"</span>, <span class="string">"0"</span>);</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             appendAttributes(attributes, method, prifix + <span class="string">"."</span> + method.getName());</span><br><span class="line">             checkAndConvertImplicitConfig(method, <span class="built_in">map</span>, attributes);</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="comment">//attributes通过系统context进行存储.</span></span><br><span class="line">     StaticContext.getSystemContext().putAll(attributes);</span><br><span class="line">     ref = createProxy(<span class="built_in">map</span>);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先看一下<code>checkDefault()</code>这个方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">void</span> <span class="title">checkDefault</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (consumer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        consumer = <span class="keyword">new</span> ConsumerConfig();</span><br><span class="line">    &#125;</span><br><span class="line">    appendProperties(consumer);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里生成了一个<code>ConsumerConfig</code>对象，根据官方文档说明这个类对应了<code>&lt;dubbo:consumer&gt;</code>这个标签中的配置项，顺带提一句该标签是<code>&lt;dubbo:reference&gt;</code>标签的缺省值，因此会覆盖<code>&lt;dubbo:reference&gt;</code>中的设置。<br>接着看一下<code>appendProperties(AbstractConfig config)</code>方法做了些什么</p>
+<figure class="highlight monkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">protected static void appendProperties(AbstractConfig config) &#123;</span><br><span class="line">    <span class="keyword">if</span> (config == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    String prefix = <span class="string">"dubbo."</span> + getTagName(config.getClass()) + <span class="string">"."</span>;</span><br><span class="line">    <span class="function"><span class="keyword">Method</span>[] <span class="title">methods</span> =</span> config.getClass().getMethods();</span><br><span class="line">    <span class="keyword">for</span> (<span class="function"><span class="keyword">Method</span> <span class="title">method</span> :</span> methods) &#123;</span><br><span class="line">            String name = <span class="function"><span class="keyword">method</span>.<span class="title">getName</span>(</span>);</span><br><span class="line">            <span class="keyword">if</span> (name.length() &gt; <span class="number">3</span> &amp;&amp; name.startsWith(<span class="string">"set"</span>) &amp;&amp; Modifier.isPublic(<span class="function"><span class="keyword">method</span>.<span class="title">getModifiers</span>(</span>)) </span><br><span class="line">                    &amp;&amp; <span class="function"><span class="keyword">method</span>.<span class="title">getParameterTypes</span>(</span>).length == <span class="number">1</span> &amp;&amp; isPrimitive(<span class="function"><span class="keyword">method</span>.<span class="title">getParameterTypes</span>(</span>)[<span class="number">0</span>])) &#123;</span><br><span class="line">                String <span class="keyword">property</span> = StringUtils.camelToSplitName(name.substring(<span class="number">3</span>, <span class="number">4</span>).toLowerCase() + name.substring(<span class="number">4</span>), <span class="string">"-"</span>);</span><br><span class="line"></span><br><span class="line">                String value = <span class="literal">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (config.getId() != <span class="literal">null</span> &amp;&amp; config.getId().length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    String pn = prefix + config.getId() + <span class="string">"."</span> + <span class="keyword">property</span>;</span><br><span class="line">                    value = System.getProperty(pn);</span><br><span class="line">                    <span class="keyword">if</span>(! StringUtils.isBlank(value)) &#123;</span><br><span class="line">                        logger.info(<span class="string">"Use System Property "</span> + pn + <span class="string">" to config dubbo"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (value == <span class="literal">null</span> || value.length() == <span class="number">0</span>) &#123;</span><br><span class="line">                    String pn = prefix + <span class="keyword">property</span>;</span><br><span class="line">                    value = System.getProperty(pn);</span><br><span class="line">                    <span class="keyword">if</span>(! StringUtils.isBlank(value)) &#123;</span><br><span class="line">                        logger.info(<span class="string">"Use System Property "</span> + pn + <span class="string">" to config dubbo"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (value == <span class="literal">null</span> || value.length() == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="function"><span class="keyword">Method</span> <span class="title">getter</span>;</span></span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        getter = config.getClass().getMethod(<span class="string">"get"</span> + name.substring(<span class="number">3</span>), <span class="keyword">new</span> <span class="class"><span class="keyword">Class</span>&lt;?&gt;[0]);</span></span><br><span class="line">                    &#125; <span class="keyword">catch</span> (NoSuchMethodException e) &#123;</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            getter = config.getClass().getMethod(<span class="string">"is"</span> + name.substring(<span class="number">3</span>), <span class="keyword">new</span> <span class="class"><span class="keyword">Class</span>&lt;?&gt;[0]);</span></span><br><span class="line">                        &#125; <span class="keyword">catch</span> (NoSuchMethodException e2) &#123;</span><br><span class="line">                            getter = <span class="literal">null</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (getter != <span class="literal">null</span>) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (getter.invoke(config, <span class="keyword">new</span> Object[<span class="number">0</span>]) == <span class="literal">null</span>) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (config.getId() != <span class="literal">null</span> &amp;&amp; config.getId().length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                                value = ConfigUtils.getProperty(prefix + config.getId() + <span class="string">"."</span> + <span class="keyword">property</span>);</span><br><span class="line">                            &#125;</span><br><span class="line">                            <span class="keyword">if</span> (value == <span class="literal">null</span> || value.length() == <span class="number">0</span>) &#123;</span><br><span class="line">                                value = ConfigUtils.getProperty(prefix + <span class="keyword">property</span>);</span><br><span class="line">                            &#125;</span><br><span class="line">                            <span class="keyword">if</span> (value == <span class="literal">null</span> || value.length() == <span class="number">0</span>) &#123;</span><br><span class="line">                                String legacyKey = legacyProperties.get(prefix + <span class="keyword">property</span>);</span><br><span class="line">                                <span class="keyword">if</span> (legacyKey != <span class="literal">null</span> &amp;&amp; legacyKey.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                                    value = convertLegacyValue(legacyKey, ConfigUtils.getProperty(legacyKey));</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                            </span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (value != <span class="literal">null</span> &amp;&amp; value.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="function"><span class="keyword">method</span>.<span class="title">invoke</span>(</span>config, <span class="keyword">new</span> Object[] &#123;convertPrimitive(<span class="function"><span class="keyword">method</span>.<span class="title">getParameterTypes</span>(</span>)[<span class="number">0</span>], value)&#125;);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看着比较长，其实主要做的事情就是执行入参<code>config</code>中的set方法来初始化传入的对象，这里就不深入分析了。</p>
+<p>继续往下看其中最重要的操作<code>ref = createProxy(map)</code>，用于生成代理对象，具体来看一下其实现</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">@SuppressWarnings(&#123; <span class="string">"unchecked"</span>, <span class="string">"rawtypes"</span>, <span class="string">"deprecation"</span> &#125;)</span><br><span class="line"><span class="function"><span class="keyword">private</span> T <span class="title">createProxy</span>(<span class="params">Map&lt;String, String&gt; map</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">       <span class="comment">/**</span></span><br><span class="line"><span class="comment">        *   略去部分代码</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">        </span><br><span class="line">           <span class="keyword">if</span> (urls.size() == <span class="number">1</span>) &#123;</span><br><span class="line">               invoker = refprotocol.refer(interfaceClass, urls.<span class="keyword">get</span>(<span class="number">0</span>));</span><br><span class="line">           &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">               List&lt;Invoker&lt;?&gt;&gt; invokers = <span class="keyword">new</span> ArrayList&lt;Invoker&lt;?&gt;&gt;();</span><br><span class="line">               URL registryURL = <span class="literal">null</span>;</span><br><span class="line">               <span class="keyword">for</span> (URL url : urls) &#123;</span><br><span class="line">                   invokers.<span class="keyword">add</span>(refprotocol.refer(interfaceClass, url));</span><br><span class="line">                   <span class="keyword">if</span> (Constants.REGISTRY_PROTOCOL.<span class="keyword">equals</span>(url.getProtocol())) &#123;</span><br><span class="line">                       registryURL = url; <span class="comment">// 用了最后一个registry url</span></span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">if</span> (registryURL != <span class="literal">null</span>) &#123; <span class="comment">// 有 注册中心协议的URL</span></span><br><span class="line">                   <span class="comment">// 对有注册中心的Cluster 只用 AvailableCluster</span></span><br><span class="line">                   URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME); </span><br><span class="line">                   invoker = cluster.<span class="keyword">join</span>(<span class="keyword">new</span> StaticDirectory(u, invokers));</span><br><span class="line">               &#125;  <span class="keyword">else</span> &#123; <span class="comment">// 不是 注册中心的URL</span></span><br><span class="line">                   invoker = cluster.<span class="keyword">join</span>(<span class="keyword">new</span> StaticDirectory(invokers));</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       Boolean c = check;</span><br><span class="line">       <span class="keyword">if</span> (c == <span class="literal">null</span> &amp;&amp; consumer != <span class="literal">null</span>) &#123;</span><br><span class="line">           c = consumer.isCheck();</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">if</span> (c == <span class="literal">null</span>) &#123;</span><br><span class="line">           c = <span class="literal">true</span>; <span class="comment">// default true</span></span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">if</span> (c &amp;&amp; ! invoker.isAvailable()) &#123;</span><br><span class="line">           <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Failed to check the status of the service "</span> + interfaceName + <span class="string">". No provider available for the service "</span> + (<span class="keyword">group</span> == <span class="literal">null</span> ? <span class="string">""</span> : <span class="keyword">group</span> + <span class="string">"/"</span>) + interfaceName + (version == <span class="literal">null</span> ? <span class="string">""</span> : <span class="string">":"</span> + version) + <span class="string">" from the url "</span> + invoker.getUrl() + <span class="string">" to the consumer "</span> + NetUtils.getLocalHost() + <span class="string">" use dubbo version "</span> + Version.getVersion());</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">           logger.info(<span class="string">"Refer dubbo service "</span> + interfaceClass.getName() + <span class="string">" from url "</span> + invoker.getUrl());</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="comment">// 创建服务代理</span></span><br><span class="line">       <span class="keyword">return</span> (T) proxyFactory.getProxy(invoker);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法里面最值得关注的地方有三个，分别是</p>
+<ol>
+<li><code>refprotocol.refer(interfaceClass, url)</code></li>
+<li><code>cluster.join(new StaticDirectory(u, invokers))</code></li>
+<li><code>proxyFactory.getProxy(invoker)</code></li>
+</ol>
+<p>这三个对象很重要，来看看其定义</p>
+<figure class="highlight d"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Protocol refprotocol = ExtensionLoader.getExtensionLoader(Protocol.<span class="keyword">class</span>).getAdaptiveExtension();</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.<span class="keyword">class</span>).getAdaptiveExtension();</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.<span class="keyword">class</span>).getAdaptiveExtension();</span><br></pre></td></tr></table></figure>
+
+<p>这三个对象的生成使用的都是Dubbo的SPI机制，具体可以参考我之前发的讲解Dubbo中SPI的那篇文章，以<code>proxyFactory</code>为例，它的本质是<code>ProxyFactory</code>的一个代理类<code>proxyFactory$Adpative</code>，<code>@Adaptive</code>标注方法的具体实现由真正的实现类完成。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SPI</span>(<span class="string">"javassist"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ProxyFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Adaptive</span>(&#123;Constants.PROXY_KEY&#125;)</span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getProxy</span><span class="params">(Invoker&lt;T&gt; invoker)</span> <span class="keyword">throws</span> RpcException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Adaptive</span>(&#123;Constants.PROXY_KEY&#125;)</span><br><span class="line">    &lt;T&gt; <span class="function">Invoker&lt;T&gt; <span class="title">getInvoker</span><span class="params">(T proxy, Class&lt;T&gt; type, URL url)</span> <span class="keyword">throws</span> RpcException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>stub=com.alibaba.dubbo.rpc.proxy.wrapper.StubProxyFactoryWrapper<br>jdk=com.alibaba.dubbo.rpc.proxy.jdk.JdkProxyFactory<br>javassist=com.alibaba.dubbo.rpc.proxy.javassist.JavassistProxyFactory<br>来看看JavassistProxyFactory类的源码</p>
+</blockquote>
+<p>在<code>META-INF/dubbo/internal/com.alibaba.dubbo.rpc.ProxyFactory</code>中的内容如上所示，可以看到<code>javassist</code>是<code>ProxyFactory</code>接口的默认选择，对应的实现类就是<code>JavassistProxyFactory</code>；<code>dubbo</code>是<code>Protocol</code>接口的默认选项，对应实现类是<code>DubboProtocol</code>；<code>failover</code>是<code>Cluster</code>接口的默认选项，对应实现类是<code>FailoverCluster</code>。</p>
+<p>了解了三个对象的实现后，首先看<code>refprotocol.refer(interfaceClass, url</code>方法，其具体实现由<code>url</code>中对象的<code>protocol</code>属性决定</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (URL <span class="attribute">url</span> : urls) &#123;</span><br><span class="line">    invokers.add(refprotocol.refer(interfaceClass, <span class="built_in">url</span>));</span><br><span class="line">    <span class="keyword">if</span> (Constants.REGISTRY_PROTOCOL.equals(<span class="built_in">url</span>.getProtocol())) &#123;</span><br><span class="line">        registryURL = <span class="built_in">url</span>; <span class="comment">// 用了最后一个registry url</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有上述代码看出refprotocol的实现由<code>url</code>决定，此处<code>url</code>又由<code>loadRegistries(false)</code>方法获得，其<code>protocol</code>属性为<code>registry</code>。<code>loadRegistries(false)</code>方法获取了所有<code>&lt;dubbo:registry&gt;</code>注册的信息，根据其返回的类型<code>List&lt;URL&gt;</code>，我们也可以发现Dubbo是可以配置多个注册中心的。</p>
+<p><code>registry</code>对应实现类为<code>RegistryProtocol</code>，根据上一篇关于SPI文章的讲解，此处的<code>refprotocol</code>是一个代理类，其<code>refer</code>方法的调用链为</p>
+<blockquote>
+<p>Protocol$Adpative -&gt; ProtocolListenerWrapper -&gt; ProtocolFilterWrapper -&gt; RegistryProtocol</p>
+</blockquote>
+<p>来看一下<code>RegistryProtocol</code>的<code>refer</code>方法</p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">@SuppressWarnings(<span class="string">"unchecked"</span>)</span><br><span class="line">	<span class="keyword">public</span> &lt;T&gt; Invoker&lt;T&gt; refer(Class&lt;T&gt; <span class="keyword">type</span>, URL url) throws RpcException &#123;</span><br><span class="line">        url = url.setProtocol(url.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_REGISTRY)).removeParameter(Constants.REGISTRY_KEY);</span><br><span class="line">        Registry registry = registryFactory.getRegistry(url);</span><br><span class="line">        <span class="keyword">if</span> (RegistryService.class.<span class="keyword">equals</span>(<span class="keyword">type</span>)) &#123;</span><br><span class="line">        	<span class="keyword">return</span> proxyFactory.getInvoker((T) registry, <span class="keyword">type</span>, url);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// group="a,b" or group="*"</span></span><br><span class="line">        <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; qs = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));</span><br><span class="line">        <span class="built_in">String</span> <span class="keyword">group</span> = qs.get(Constants.GROUP_KEY);</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">group</span> != <span class="built_in">null</span> &amp;&amp; <span class="keyword">group</span>.length() &gt; <span class="number">0</span> ) &#123;</span><br><span class="line">            <span class="keyword">if</span> ( ( Constants.COMMA_SPLIT_PATTERN.split( <span class="keyword">group</span> ) ).length &gt; <span class="number">1</span></span><br><span class="line">                    || <span class="string">"*"</span>.<span class="keyword">equals</span>( <span class="keyword">group</span> ) ) &#123;</span><br><span class="line">                <span class="keyword">return</span> doRefer( getMergeableCluster(), registry, <span class="keyword">type</span>, url );</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> doRefer(cluster, registry, <span class="keyword">type</span>, url);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先<code>registryFactory.getRegistry(url)</code>用于注册注册中心，这里的<code>getRegistry</code>方法属于<code>AbstractRegistryFactory</code>类，来看一下具体实现</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Registry getRegistry(URL url) &#123;</span><br><span class="line">	url = url.setPath(RegistryService.class.getName())</span><br><span class="line">			.addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName())</span><br><span class="line">			.removeParameters(Constants.EXPORT_KEY, Constants.REFER_KEY);</span><br><span class="line">	<span class="keyword">String</span> <span class="built_in">key</span> = url.toServiceString();</span><br><span class="line">    <span class="comment">// 锁定注册中心获取过程，保证注册中心单一实例</span></span><br><span class="line">    LOCK.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Registry registry = REGISTRIES.<span class="built_in">get</span>(<span class="built_in">key</span>);</span><br><span class="line">        <span class="keyword">if</span> (registry != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> registry;</span><br><span class="line">        &#125;</span><br><span class="line">        registry = createRegistry(url);</span><br><span class="line">        <span class="keyword">if</span> (registry == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Can not create registry "</span> + url);</span><br><span class="line">        &#125;</span><br><span class="line">        REGISTRIES.put(<span class="built_in">key</span>, registry);</span><br><span class="line">        <span class="keyword">return</span> registry;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="comment">// 释放锁</span></span><br><span class="line">        LOCK.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里通过加锁的方式往<code>REGISTRIES</code>这个map里添加<code>createRegistry(url)</code>方法生成的<code>registry</code>对象，<code>createRegistry(url)</code>方法的具体实现同样由SPI方式生成的代理对象执行，我们直接看<code>zookeeper</code>情况下在<code>ZookeeperRegistryFactory</code>这个类中的实现</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">   <span class="keyword">private</span> ZookeeperTransporter zookeeperTransporter</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Registry <span class="title">createRegistry</span><span class="params">(URL url)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">return</span> <span class="keyword">new</span> ZookeeperRegistry(url, zookeeperTransporter);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>zookeeperTransporter</code>是一个<code>ZookeeperTransporter</code>类型的对象，该对象同样是由SPI机制管理的，默认实现方式是<code>zkclient</code>的，对应实现类是<code>ZkclientZookeeperTransporter</code></p>
+<p>接着看一下<code>new ZookeeperRegistry(url, zookeeperTransporter)</code>在做什么</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ZookeeperRegistry</span>(<span class="params">URL url, ZookeeperTransporter zookeeperTransporter</span>)</span> &#123;</span><br><span class="line">    super(url);</span><br><span class="line">    <span class="keyword">if</span> (url.isAnyHost()) &#123;</span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"registry address == null"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">    String <span class="keyword">group</span> = url.getParameter(Constants.GROUP_KEY, DEFAULT_ROOT);</span><br><span class="line">    <span class="keyword">if</span> (! <span class="keyword">group</span>.startsWith(Constants.PATH_SEPARATOR)) &#123;</span><br><span class="line">        <span class="keyword">group</span> = Constants.PATH_SEPARATOR + <span class="keyword">group</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.root = <span class="keyword">group</span>;</span><br><span class="line">    zkClient = zookeeperTransporter.connect(url);<span class="comment">//zk上创建节点</span></span><br><span class="line">    zkClient.addStateListener(<span class="keyword">new</span> StateListener() &#123;<span class="comment">//监听该节点</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stateChanged</span>(<span class="params"><span class="keyword">int</span> state</span>)</span> &#123;</span><br><span class="line">        	<span class="keyword">if</span> (state == RECONNECTED) &#123;</span><br><span class="line">         	<span class="keyword">try</span> &#123;</span><br><span class="line">		recover();</span><br><span class="line">	&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">		logger.error(e.getMessage(), e);</span><br><span class="line">	&#125;</span><br><span class="line">        	&#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>ZookeeperRegistry</code>的构造方法调用了父类<code>FailbackRegistry</code>的构造方法，然后做了两件事，1.在zookeeper上创建一个<code>ZkClient</code>节点，2.监听该节点的RECONNECTED事，下面来看一看<code>FailbackRegistry</code>的构造方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">FailbackRegistry</span><span class="params">(URL url)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(url);</span><br><span class="line">    <span class="keyword">int</span> retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);</span><br><span class="line">    <span class="keyword">this</span>.retryFuture = retryExecutor.scheduleWithFixedDelay(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// 检测并连接注册中心</span></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                retry();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable t) &#123; <span class="comment">// 防御性容错</span></span><br><span class="line">                logger.<span class="keyword">error</span>(<span class="string">"Unexpected error occur at failed retry, cause: "</span> + t.getMessage(), t);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里又调用了父类<code>AbstractRegistry</code>的构造方法，并启用了一个线程池来定时重建与注册中心的连接，从这个类的名字<code>FailbackRegistry</code>就可以看出来它的作用。接着来看<code>AbstractRegistry</code>的构造方法</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> AbstractRegistry(URL url) &#123;</span><br><span class="line">    setUrl(url);</span><br><span class="line">    <span class="comment">// 启动文件保存定时器</span></span><br><span class="line">    syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, <span class="keyword">false</span>);</span><br><span class="line">    String filename = url.getParameter(Constants.FILE_KEY, System.getProperty(<span class="string">"user.home"</span>) + <span class="string">"/.dubbo/dubbo-registry-"</span> + url.getHost() + <span class="string">".cache"</span>);</span><br><span class="line">    <span class="keyword">File</span> <span class="keyword">file</span> = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (ConfigUtils.isNotEmpty(filename)) &#123;</span><br><span class="line">        <span class="keyword">file</span> = <span class="keyword">new</span> <span class="keyword">File</span>(filename);</span><br><span class="line">        <span class="keyword">if</span>(! <span class="keyword">file</span>.exists() &amp;&amp; <span class="keyword">file</span>.getParentFile() != <span class="keyword">null</span> &amp;&amp; ! <span class="keyword">file</span>.getParentFile().exists())&#123;</span><br><span class="line">            <span class="keyword">if</span>(! <span class="keyword">file</span>.getParentFile().mkdirs())&#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"Invalid registry store file "</span> + <span class="keyword">file</span> + <span class="string">", cause: Failed to create directory "</span> + <span class="keyword">file</span>.getParentFile() + <span class="string">"!"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.<span class="keyword">file</span> = <span class="keyword">file</span>;</span><br><span class="line">    loadProperties();</span><br><span class="line">    notify(url.getBackupUrls());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里首先从<code>System.getProperty(&quot;user.home&quot;) + &quot;/.dubbo/dubbo-registry-&quot; + url.getHost() + &quot;.cache&quot;</code>这个用户本地目录加载缓存的文件到<code>properties</code>中，接着调用了<code>notify(List&lt;URL&gt; urls)</code>方法</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">protected <span class="keyword">void</span> notify(List&lt;URL&gt; urls) &#123;</span><br><span class="line">    <span class="keyword">if</span>(urls == <span class="literal">null</span> || urls.isEmpty()) <span class="keyword">return</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">Map</span>.Entry&lt;URL, <span class="built_in">Set</span>&lt;NotifyListener&gt;&gt; <span class="attribute">entry</span> : getSubscribed().entrySet()) &#123;</span><br><span class="line">        URL <span class="built_in">url</span> = entry.getKey();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>(! UrlUtils.isMatch(<span class="built_in">url</span>, urls.get(<span class="number">0</span>))) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="built_in">Set</span>&lt;NotifyListener&gt; listeners = entry.getValue();</span><br><span class="line">        <span class="keyword">if</span> (listeners != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">for</span> (NotifyListener <span class="attribute">listener</span> : listeners) &#123;</span><br><span class="line">                <span class="title">try</span> &#123;</span><br><span class="line">                    notify(<span class="built_in">url</span>, listener, filterEmpty(<span class="built_in">url</span>, urls));</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">                    logger.error(<span class="string">"Failed to notify registry event, urls: "</span> +  urls + <span class="string">", cause: "</span> + t.getMessage(), t);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里用到了观察者模式，当服务变更时，通过<code>getSubscribed()</code>方法获取订阅者列表，并通知所有的订阅者更新。</p>
+<p>回到<code>RegistryProtocol</code>类的<code>refer(Class&lt;T&gt; type, URL url)</code>方法，最后返回的是<code>doRefer(cluster, registry, type, url)</code>，来看一下里面做了什么</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">private</span> &lt;<span class="type">T</span>&gt; <span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; doRefer(<span class="type">Cluster</span> cluster, <span class="type">Registry</span> registry, <span class="type">Class</span>&lt;<span class="type">T</span>&gt; <span class="class"><span class="keyword">type</span>, <span class="type">URL</span> url) &#123;</span></span><br><span class="line"><span class="class">    <span class="type">RegistryDirectory</span>&lt;<span class="type">T</span>&gt; <span class="title">directory</span> = <span class="title">new</span> <span class="type">RegistryDirectory</span>&lt;<span class="type">T</span>&gt;(<span class="title">type</span>, <span class="title">url</span>);</span></span><br><span class="line"><span class="class">    <span class="title">directory</span>.<span class="title">setRegistry</span>(<span class="title">registry</span>);</span></span><br><span class="line"><span class="class">    <span class="title">directory</span>.<span class="title">setProtocol</span>(<span class="title">protocol</span>);</span></span><br><span class="line"><span class="class">    <span class="type">URL</span> <span class="title">subscribeUrl</span> = <span class="title">new</span> <span class="type">URL</span>(<span class="type">Constants</span>.<span class="type">CONSUMER_PROTOCOL</span>, <span class="type">NetUtils</span>.<span class="title">getLocalHost</span>(), 0, <span class="title">type</span>.<span class="title">getName</span>(), <span class="title">directory</span>.<span class="title">getUrl</span>().<span class="title">getParameters</span>());</span></span><br><span class="line"><span class="class">    <span class="title">if</span> (! <span class="type">Constants</span>.<span class="type">ANY_VALUE</span>.<span class="title">equals</span>(<span class="title">url</span>.<span class="title">getServiceInterface</span>())</span></span><br><span class="line"><span class="class">            &amp;&amp; <span class="title">url</span>.<span class="title">getParameter</span>(<span class="type">Constants</span>.<span class="type">REGISTER_KEY</span>, <span class="title">true</span>)) &#123;</span></span><br><span class="line"><span class="class">        <span class="title">registry</span>.<span class="title">register</span>(<span class="title">subscribeUrl</span>.<span class="title">addParameters</span>(<span class="type">Constants</span>.<span class="type">CATEGORY_KEY</span>, <span class="type">Constants</span>.<span class="type">CONSUMERS_CATEGORY</span>,</span></span><br><span class="line"><span class="class">                <span class="type">Constants</span>.<span class="type">CHECK_KEY</span>, <span class="type">String</span>.<span class="title">valueOf</span>(<span class="title">false</span>)));</span></span><br><span class="line"><span class="class">    &#125;</span></span><br><span class="line">    directory.subscribe(subscribeUrl.addParameter(<span class="type">Constants</span>.<span class="type">CATEGORY_KEY</span>, </span><br><span class="line">            <span class="type">Constants</span>.<span class="type">PROVIDERS_CATEGORY</span> </span><br><span class="line">            + <span class="string">","</span> + <span class="type">Constants</span>.<span class="type">CONFIGURATORS_CATEGORY</span> </span><br><span class="line">            + <span class="string">","</span> + <span class="type">Constants</span>.<span class="type">ROUTERS_CATEGORY</span>));</span><br><span class="line">    return cluster.join(directory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里首先调用了<code>register</code>方法在注册中心进行了订阅，并在注册中心的写入了消费者的信息。这里调用层级较深，就不再深入展开。</p>
+<p>接着看一下<code>subscribe</code>方法，</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">void</span> subscribe(URL <span class="built_in">url</span>) &#123;</span><br><span class="line">    setConsumerUrl(<span class="built_in">url</span>);</span><br><span class="line">    registry.subscribe(<span class="built_in">url</span>, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用了<code>ZookeeperRegistry</code>的<code>subscribe</code>方法，也就是<code>FailbackRegistry</code>的<code>subscribe</code>方法</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public <span class="keyword">void</span> subscribe(URL <span class="built_in">url</span>, NotifyListener listener) &#123;</span><br><span class="line">    <span class="keyword">super</span>.subscribe(<span class="built_in">url</span>, listener);</span><br><span class="line">    removeFailedSubscribed(<span class="built_in">url</span>, listener);</span><br><span class="line">    <span class="title">try</span> &#123;</span><br><span class="line">        <span class="comment">// 向服务器端发送订阅请求</span></span><br><span class="line">        doSubscribe(<span class="built_in">url</span>, listener);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        Throwable t = e;</span><br><span class="line"></span><br><span class="line">        List&lt;URL&gt; urls = getCacheUrls(<span class="built_in">url</span>);</span><br><span class="line">        <span class="keyword">if</span> (urls != <span class="literal">null</span> &amp;&amp; urls.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            notify(<span class="built_in">url</span>, listener, urls);</span><br><span class="line">            logger.error(<span class="string">"Failed to subscribe "</span> + <span class="built_in">url</span> + <span class="string">", Using cached list: "</span> + urls + <span class="string">" from cache file: "</span> + getUrl().getParameter(Constants.FILE_KEY, System.getProperty(<span class="string">"user.home"</span>) + <span class="string">"/dubbo-registry-"</span> + <span class="built_in">url</span>.getHost() + <span class="string">".cache"</span>) + <span class="string">", cause: "</span> + t.getMessage(), t);</span><br><span class="line">        &#125; <span class="title">else</span> &#123;</span><br><span class="line">            <span class="comment">// 如果开启了启动时检测，则直接抛出异常</span></span><br><span class="line">            boolean check = getUrl().getParameter(Constants.CHECK_KEY, <span class="literal">true</span>)</span><br><span class="line">                    &amp;&amp; <span class="built_in">url</span>.getParameter(Constants.CHECK_KEY, <span class="literal">true</span>);</span><br><span class="line">            boolean skipFailback = t <span class="keyword">instanceof</span> SkipFailbackWrapperException;</span><br><span class="line">            <span class="keyword">if</span> (check || skipFailback) &#123;</span><br><span class="line">                <span class="keyword">if</span>(skipFailback) &#123;</span><br><span class="line">                    t = t.getCause();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Failed to subscribe "</span> + <span class="built_in">url</span> + <span class="string">", cause: "</span> + t.getMessage(), t);</span><br><span class="line">            &#125; <span class="title">else</span> &#123;</span><br><span class="line">                logger.error(<span class="string">"Failed to subscribe "</span> + <span class="built_in">url</span> + <span class="string">", waiting for retry, cause: "</span> + t.getMessage(), t);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将失败的订阅请求记录到失败列表，定时重试</span></span><br><span class="line">        addFailedSubscribed(<span class="built_in">url</span>, listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到首先会调用父类<code>AbstractRegistry</code>的<code>subscribe</code>方法添加监听器，然后通过<code>doSubscribe(url, listener)</code>向服务端发送订阅请求，该方法在<code>ZookeeperRegistry</code>类中实现，来重点看一下这个方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> doSubscribe(<span class="keyword">final</span> URL url, <span class="keyword">final</span> NotifyListener listener) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (Constants.ANY_VALUE.equals(url.getServiceInterface())) &#123;</span><br><span class="line">            <span class="keyword">String</span> root = toRootPath();</span><br><span class="line">            ConcurrentMap&lt;NotifyListener, ChildListener&gt; listeners = zkListeners.<span class="built_in">get</span>(url);</span><br><span class="line">            <span class="keyword">if</span> (listeners == <span class="keyword">null</span>) &#123;</span><br><span class="line">                zkListeners.putIfAbsent(url, <span class="keyword">new</span> ConcurrentHashMap&lt;NotifyListener, ChildListener&gt;());</span><br><span class="line">                listeners = zkListeners.<span class="built_in">get</span>(url);</span><br><span class="line">            &#125;</span><br><span class="line">            ChildListener zkListener = listeners.<span class="built_in">get</span>(listener);</span><br><span class="line">            <span class="keyword">if</span> (zkListener == <span class="keyword">null</span>) &#123;</span><br><span class="line">                listeners.putIfAbsent(listener, <span class="keyword">new</span> ChildListener() &#123;</span><br><span class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> childChanged(<span class="keyword">String</span> parentPath, List&lt;<span class="keyword">String</span>&gt; currentChilds) &#123;</span><br><span class="line">                        <span class="keyword">for</span> (<span class="keyword">String</span> child : currentChilds) &#123;</span><br><span class="line">				child = URL.decode(child);</span><br><span class="line">                            <span class="keyword">if</span> (! anyServices.contains(child)) &#123;</span><br><span class="line">                                anyServices.<span class="built_in">add</span>(child);</span><br><span class="line">                                subscribe(url.setPath(child).addParameters(Constants.INTERFACE_KEY, child, </span><br><span class="line">                                        Constants.CHECK_KEY, <span class="keyword">String</span>.valueOf(<span class="keyword">false</span>)), listener);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">                zkListener = listeners.<span class="built_in">get</span>(listener);</span><br><span class="line">            &#125;</span><br><span class="line">            zkClient.create(root, <span class="keyword">false</span>);</span><br><span class="line">            List&lt;<span class="keyword">String</span>&gt; services = zkClient.addChildListener(root, zkListener);</span><br><span class="line">            <span class="keyword">if</span> (services != <span class="keyword">null</span> &amp;&amp; services.<span class="built_in">size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">String</span> service : services) &#123;</span><br><span class="line">		service = URL.decode(service);</span><br><span class="line">		anyServices.<span class="built_in">add</span>(service);</span><br><span class="line">                    subscribe(url.setPath(service).addParameters(Constants.INTERFACE_KEY, service, </span><br><span class="line">                            Constants.CHECK_KEY, <span class="keyword">String</span>.valueOf(<span class="keyword">false</span>)), listener);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            List&lt;URL&gt; urls = <span class="keyword">new</span> ArrayList&lt;URL&gt;();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">String</span> path : toCategoriesPath(url)) &#123;</span><br><span class="line">                ConcurrentMap&lt;NotifyListener, ChildListener&gt; listeners = zkListeners.<span class="built_in">get</span>(url);</span><br><span class="line">                <span class="keyword">if</span> (listeners == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    zkListeners.putIfAbsent(url, <span class="keyword">new</span> ConcurrentHashMap&lt;NotifyListener, ChildListener&gt;());</span><br><span class="line">                    listeners = zkListeners.<span class="built_in">get</span>(url);</span><br><span class="line">                &#125;</span><br><span class="line">                ChildListener zkListener = listeners.<span class="built_in">get</span>(listener);</span><br><span class="line">                <span class="keyword">if</span> (zkListener == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    listeners.putIfAbsent(listener, <span class="keyword">new</span> ChildListener() &#123;</span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> childChanged(<span class="keyword">String</span> parentPath, List&lt;<span class="keyword">String</span>&gt; currentChilds) &#123;</span><br><span class="line">                        	ZookeeperRegistry.<span class="keyword">this</span>.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;);</span><br><span class="line">                    zkListener = listeners.<span class="built_in">get</span>(listener);</span><br><span class="line">                &#125;</span><br><span class="line">            <span class="comment">//创建下述节点</span></span><br><span class="line">            <span class="comment">// /dubbo/dubbo.common.hello.service.HelloService/providers/</span></span><br><span class="line">            <span class="comment">// /dubbo/dubbo.common.hello.service.HelloService/configurators/</span></span><br><span class="line">            <span class="comment">// /dubbo/dubbo.common.hello.service.HelloService/routers/</span></span><br><span class="line">                zkClient.create(path, <span class="keyword">false</span>);</span><br><span class="line">                List&lt;<span class="keyword">String</span>&gt; children = zkClient.addChildListener(path, zkListener);</span><br><span class="line">                <span class="keyword">if</span> (children != <span class="keyword">null</span>) &#123;</span><br><span class="line">                	urls.addAll(toUrlsWithEmpty(url, path, children));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            notify(url, listener, urls);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RpcException(<span class="string">"Failed to subscribe "</span> + url + <span class="string">" to zookeeper "</span> + getUrl() + <span class="string">", cause: "</span> + e.getMessage(), e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法很长，主要做的事情是通过<code>zkClient.create(path, false)</code>在zookeeper中创建监听的节点，然后调用notify(url, listener, urls)方法，其具体实现在<code>FailbackRegistry</code>中</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">protected <span class="keyword">void</span> notify(URL url, NotifyListener listener, <span class="built_in">List</span>&lt;URL&gt; urls) &#123;</span><br><span class="line">    <span class="keyword">if</span> (url == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"notify url == null"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (listener == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"notify listener == null"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">    	doNotify(url, listener, urls);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception t) &#123;</span><br><span class="line">        <span class="comment">// 将失败的通知请求记录到失败列表，定时重试</span></span><br><span class="line">        <span class="built_in">Map</span>&lt;NotifyListener, <span class="built_in">List</span>&lt;URL&gt;&gt; listeners = failedNotified.<span class="keyword">get</span>(url);</span><br><span class="line">        <span class="keyword">if</span> (listeners == <span class="keyword">null</span>) &#123;</span><br><span class="line">            failedNotified.putIfAbsent(url, <span class="keyword">new</span> ConcurrentHashMap&lt;NotifyListener, <span class="built_in">List</span>&lt;URL&gt;&gt;());</span><br><span class="line">            listeners = failedNotified.<span class="keyword">get</span>(url);</span><br><span class="line">        &#125;</span><br><span class="line">        listeners.put(listener, urls);</span><br><span class="line">        logger.error(<span class="string">"Failed to notify for subscribe "</span> + url + <span class="string">", waiting for retry, cause: "</span> + t.getMessage(), t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟进<code>doNotify</code>方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">void</span> <span class="title">doNotify</span><span class="params">(URL url, NotifyListener listener, List&lt;URL&gt; urls)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">super</span>.notify(url, listener, urls);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用了父类<code>AbstractRegistry</code>的<code>notify</code>方法</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">protected <span class="keyword">void</span> notify(URL url, NotifyListener listener, <span class="built_in">List</span>&lt;URL&gt; urls) &#123;</span><br><span class="line">    <span class="keyword">if</span> (url == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"notify url == null"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (listener == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"notify listener == null"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((urls == <span class="keyword">null</span> || urls.size() == <span class="number">0</span>) </span><br><span class="line">            &amp;&amp; ! Constants.ANY_VALUE.equals(url.getServiceInterface())) &#123;</span><br><span class="line">        logger.warn(<span class="string">"Ignore empty notify urls for subscribe url "</span> + url);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">        logger.info(<span class="string">"Notify urls for subscribe url "</span> + url + <span class="string">", urls: "</span> + urls);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">List</span>&lt;URL&gt;&gt; result = <span class="keyword">new</span> HashMap&lt;<span class="built_in">String</span>, <span class="built_in">List</span>&lt;URL&gt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (URL u : urls) &#123;</span><br><span class="line">        <span class="keyword">if</span> (UrlUtils.isMatch(url, u)) &#123;</span><br><span class="line">        	<span class="built_in">String</span> category = u.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);</span><br><span class="line">        	<span class="built_in">List</span>&lt;URL&gt; categoryList = result.<span class="keyword">get</span>(category);</span><br><span class="line">        	<span class="keyword">if</span> (categoryList == <span class="keyword">null</span>) &#123;</span><br><span class="line">        		categoryList = <span class="keyword">new</span> ArrayList&lt;URL&gt;();</span><br><span class="line">        		result.put(category, categoryList);</span><br><span class="line">        	&#125;</span><br><span class="line">        	categoryList.add(u);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (result.size() == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">List</span>&lt;URL&gt;&gt; categoryNotified = notified.<span class="keyword">get</span>(url);</span><br><span class="line">    <span class="keyword">if</span> (categoryNotified == <span class="keyword">null</span>) &#123;</span><br><span class="line">        notified.putIfAbsent(url, <span class="keyword">new</span> ConcurrentHashMap&lt;<span class="built_in">String</span>, <span class="built_in">List</span>&lt;URL&gt;&gt;());</span><br><span class="line">        categoryNotified = notified.<span class="keyword">get</span>(url);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">Map</span>.Entry&lt;<span class="built_in">String</span>, <span class="built_in">List</span>&lt;URL&gt;&gt; entry : result.entrySet()) &#123;</span><br><span class="line">        <span class="built_in">String</span> category = entry.getKey();</span><br><span class="line">        <span class="built_in">List</span>&lt;URL&gt; categoryList = entry.getValue();</span><br><span class="line">        categoryNotified.put(category, categoryList);</span><br><span class="line">        saveProperties(url);</span><br><span class="line">        listener.notify(categoryList);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后真正的实现在listener.notify(categoryList)中，跟到<code>RegistryDirectory</code>的notify(List<url> urls)方法中</url></p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> synchronized <span class="keyword">void</span> <span class="title">notify</span>(<span class="params">List&lt;URL&gt; urls</span>)</span> &#123;</span><br><span class="line">    List&lt;URL&gt; invokerUrls = <span class="keyword">new</span> ArrayList&lt;URL&gt;();</span><br><span class="line">    List&lt;URL&gt; routerUrls = <span class="keyword">new</span> ArrayList&lt;URL&gt;();</span><br><span class="line">    List&lt;URL&gt; configuratorUrls = <span class="keyword">new</span> ArrayList&lt;URL&gt;();</span><br><span class="line">    <span class="keyword">for</span> (URL url : urls) &#123;</span><br><span class="line">        String protocol = url.getProtocol();</span><br><span class="line">        String category = url.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);</span><br><span class="line">        <span class="keyword">if</span> (Constants.ROUTERS_CATEGORY.<span class="keyword">equals</span>(category) </span><br><span class="line">                || Constants.ROUTE_PROTOCOL.<span class="keyword">equals</span>(protocol)) &#123;</span><br><span class="line">            routerUrls.<span class="keyword">add</span>(url);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (Constants.CONFIGURATORS_CATEGORY.<span class="keyword">equals</span>(category) </span><br><span class="line">                || Constants.OVERRIDE_PROTOCOL.<span class="keyword">equals</span>(protocol)) &#123;</span><br><span class="line">            configuratorUrls.<span class="keyword">add</span>(url);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (Constants.PROVIDERS_CATEGORY.<span class="keyword">equals</span>(category)) &#123;</span><br><span class="line">            invokerUrls.<span class="keyword">add</span>(url);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            logger.warn(<span class="string">"Unsupported category "</span> + category + <span class="string">" in notified url: "</span> + url + <span class="string">" from registry "</span> + getUrl().getAddress() + <span class="string">" to consumer "</span> + NetUtils.getLocalHost());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// configurators </span></span><br><span class="line">    <span class="keyword">if</span> (configuratorUrls != <span class="literal">null</span> &amp;&amp; configuratorUrls.size() &gt;<span class="number">0</span> )&#123;</span><br><span class="line">        <span class="keyword">this</span>.configurators = toConfigurators(configuratorUrls);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// routers</span></span><br><span class="line">    <span class="keyword">if</span> (routerUrls != <span class="literal">null</span> &amp;&amp; routerUrls.size() &gt;<span class="number">0</span> )&#123;</span><br><span class="line">        List&lt;Router&gt; routers = toRouters(routerUrls);</span><br><span class="line">        <span class="keyword">if</span>(routers != <span class="literal">null</span>)&#123; <span class="comment">// null - do nothing</span></span><br><span class="line">            setRouters(routers);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    List&lt;Configurator&gt; localConfigurators = <span class="keyword">this</span>.configurators; <span class="comment">// local reference</span></span><br><span class="line">    <span class="comment">// 合并override参数</span></span><br><span class="line">    <span class="keyword">this</span>.overrideDirectoryUrl = directoryUrl;</span><br><span class="line">    <span class="keyword">if</span> (localConfigurators != <span class="literal">null</span> &amp;&amp; localConfigurators.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (Configurator configurator : localConfigurators) &#123;</span><br><span class="line">            <span class="keyword">this</span>.overrideDirectoryUrl = configurator.configure(overrideDirectoryUrl);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// providers</span></span><br><span class="line">    refreshInvoker(invokerUrls);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里做的事情主要是更新<code>configurators</code>和<code>routers</code>，然后调用<code>refreshInvoker(invokerUrls)</code>，这个方法用于更新服务提供者相关的invoker，因此非常重要</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> void refreshInvoker(List&lt;URL&gt; invokerUrls)&#123;</span><br><span class="line">    <span class="keyword">if</span> (invokerUrls != <span class="literal">null</span> &amp;&amp; invokerUrls.size() == <span class="number">1</span> &amp;&amp; invokerUrls.<span class="keyword">get</span>(<span class="number">0</span>) != <span class="literal">null</span></span><br><span class="line">            &amp;&amp; Constants.EMPTY_PROTOCOL.equals(invokerUrls.<span class="keyword">get</span>(<span class="number">0</span>).getProtocol())) &#123;</span><br><span class="line">        <span class="built_in">this</span>.forbidden = <span class="literal">true</span>; <span class="comment">// 禁止访问</span></span><br><span class="line">        <span class="built_in">this</span>.methodInvokerMap = <span class="literal">null</span>; <span class="comment">// 置空列表</span></span><br><span class="line">        destroyAllInvokers(); <span class="comment">// 关闭所有Invoker</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.forbidden = <span class="literal">false</span>; <span class="comment">// 允许访问</span></span><br><span class="line">        Map&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt; oldUrlInvokerMap = <span class="built_in">this</span>.urlInvokerMap; <span class="comment">// local reference</span></span><br><span class="line">        <span class="keyword">if</span> (invokerUrls.size() == <span class="number">0</span> &amp;&amp; <span class="built_in">this</span>.cachedInvokerUrls != <span class="literal">null</span>)&#123;</span><br><span class="line">            invokerUrls.addAll(<span class="built_in">this</span>.cachedInvokerUrls);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.cachedInvokerUrls = <span class="keyword">new</span> <span class="type">HashSet</span>&lt;URL&gt;();</span><br><span class="line">            <span class="built_in">this</span>.cachedInvokerUrls.addAll(invokerUrls);<span class="comment">//缓存invokerUrls列表，便于交叉对比</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (invokerUrls.size() ==<span class="number">0</span> )&#123;</span><br><span class="line">        	<span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Map&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt; <span class="keyword">new</span><span class="type">UrlInvokerMap</span> = toInvokers(invokerUrls) ;<span class="comment">// 将URL列表转成Invoker列表</span></span><br><span class="line">        Map&lt;<span class="keyword">String</span>, List&lt;Invoker&lt;T&gt;&gt;&gt; <span class="keyword">new</span><span class="type">MethodInvokerMap</span> = toMethodInvokers(<span class="keyword">new</span><span class="type">UrlInvokerMap</span>); <span class="comment">// 换方法名映射Invoker列表</span></span><br><span class="line">        <span class="comment">// state change</span></span><br><span class="line">        <span class="comment">//如果计算错误，则不进行处理.</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">new</span><span class="type">UrlInvokerMap</span> == <span class="literal">null</span> || <span class="keyword">new</span><span class="type">UrlInvokerMap</span>.size() == <span class="number">0</span> )&#123;</span><br><span class="line">            logger.error(<span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">"urls to invokers error .invokerUrls.size :"</span>+invokerUrls.size() + <span class="string">", invoker.size :0. urls :"</span>+invokerUrls.toString()));</span><br><span class="line">            <span class="keyword">return</span> ;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">this</span>.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(<span class="keyword">new</span><span class="type">MethodInvokerMap</span>) : <span class="type">newMethodInvokerMap</span>;</span><br><span class="line">        <span class="built_in">this</span>.urlInvokerMap = <span class="keyword">new</span><span class="type">UrlInvokerMap</span>;</span><br><span class="line">        <span class="keyword">try</span>&#123;</span><br><span class="line">            destroyUnusedInvokers(oldUrlInvokerMap,<span class="keyword">new</span><span class="type">UrlInvokerMap</span>); <span class="comment">// 关闭未使用的Invoker</span></span><br><span class="line">        &#125;<span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.warn(<span class="string">"destroyUnusedInvokers error. "</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的核心是<code>toInvokers(invokerUrls)</code>方法将URL列表转成Invoker列表</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt; toInvokers(List&lt;URL&gt; urls) &#123;</span><br><span class="line">    Map&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt; <span class="keyword">new</span><span class="type">UrlInvokerMap</span> = <span class="keyword">new</span> <span class="type">HashMap</span>&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt;();</span><br><span class="line">    <span class="keyword">if</span>(urls == <span class="literal">null</span> || urls.size() == <span class="number">0</span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span><span class="type">UrlInvokerMap</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Set&lt;<span class="keyword">String</span>&gt; keys = <span class="keyword">new</span> <span class="type">HashSet</span>&lt;<span class="keyword">String</span>&gt;();</span><br><span class="line">    <span class="keyword">String</span> queryProtocols = <span class="built_in">this</span>.queryMap.<span class="keyword">get</span>(Constants.PROTOCOL_KEY);</span><br><span class="line">    <span class="keyword">for</span> (URL providerUrl : <span class="type">urls</span>) &#123;</span><br><span class="line">    	<span class="comment">//如果reference端配置了protocol，则只选择匹配的protocol</span></span><br><span class="line">    	<span class="keyword">if</span> (queryProtocols != <span class="literal">null</span> &amp;&amp; queryProtocols.length() &gt;<span class="number">0</span>) &#123;</span><br><span class="line">    		boolean accept = <span class="literal">false</span>;</span><br><span class="line">    		<span class="keyword">String</span>[] acceptProtocols = queryProtocols.split(<span class="string">","</span>);</span><br><span class="line">    		<span class="keyword">for</span> (<span class="keyword">String</span> acceptProtocol : <span class="type">acceptProtocols</span>) &#123;</span><br><span class="line">    			<span class="keyword">if</span> (providerUrl.getProtocol().equals(acceptProtocol)) &#123;</span><br><span class="line">    				accept = <span class="literal">true</span>;</span><br><span class="line">    				<span class="keyword">break</span>;</span><br><span class="line">    			&#125;</span><br><span class="line">    		&#125;</span><br><span class="line">    		<span class="keyword">if</span> (!accept) &#123;</span><br><span class="line">    			<span class="keyword">continue</span>;</span><br><span class="line">    		&#125;</span><br><span class="line">    	&#125;</span><br><span class="line">        <span class="keyword">if</span> (Constants.EMPTY_PROTOCOL.equals(providerUrl.getProtocol())) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (! ExtensionLoader.getExtensionLoader(Protocol.class).hasExtension(providerUrl.getProtocol())) &#123;</span><br><span class="line">            logger.error(<span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">"Unsupported protocol "</span> + providerUrl.getProtocol() + <span class="string">" in notified url: "</span> + providerUrl + <span class="string">" from registry "</span> + getUrl().getAddress() + <span class="string">" to consumer "</span> + NetUtils.getLocalHost() </span><br><span class="line">                    + <span class="string">", supported protocol: "</span>+ExtensionLoader.getExtensionLoader(Protocol.class).getSupportedExtensions()));</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        URL url = mergeUrl(providerUrl);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">String</span> key = url.toFullString(); <span class="comment">// URL参数是排序的</span></span><br><span class="line">        <span class="keyword">if</span> (keys.contains(key)) &#123; <span class="comment">// 重复URL</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        keys.add(key);</span><br><span class="line">        <span class="comment">// 缓存key为没有合并消费端参数的URL，不管消费端如何合并参数，如果服务端URL发生变化，则重新refer</span></span><br><span class="line">        Map&lt;<span class="keyword">String</span>, Invoker&lt;T&gt;&gt; localUrlInvokerMap = <span class="built_in">this</span>.urlInvokerMap; <span class="comment">// local reference</span></span><br><span class="line">        Invoker&lt;T&gt; invoker = localUrlInvokerMap == <span class="literal">null</span> ? <span class="literal">null</span> : <span class="type">localUrlInvokerMap</span>.<span class="keyword">get</span>(key);</span><br><span class="line">        <span class="keyword">if</span> (invoker == <span class="literal">null</span>) &#123; <span class="comment">// 缓存中没有，重新refer</span></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">            	boolean enabled = <span class="literal">true</span>;</span><br><span class="line">            	<span class="keyword">if</span> (url.hasParameter(Constants.DISABLED_KEY)) &#123;</span><br><span class="line">            		enabled = ! url.getParameter(Constants.DISABLED_KEY, <span class="literal">false</span>);</span><br><span class="line">            	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            		enabled = url.getParameter(Constants.ENABLED_KEY, <span class="literal">true</span>);</span><br><span class="line">            	&#125;</span><br><span class="line">            	<span class="keyword">if</span> (enabled) &#123;</span><br><span class="line">            		invoker = <span class="keyword">new</span> <span class="type">InvokerDelegete</span>&lt;T&gt;(protocol.refer(serviceType, url), url, providerUrl);</span><br><span class="line">            	&#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">                logger.error(<span class="string">"Failed to refer invoker for interface:"</span>+serviceType+<span class="string">",url:("</span>+url+<span class="string">")"</span> + t.getMessage(), t);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (invoker != <span class="literal">null</span>) &#123; <span class="comment">// 将新的引用放入缓存</span></span><br><span class="line">                <span class="keyword">new</span><span class="type">UrlInvokerMap</span>.put(key, invoker);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">new</span><span class="type">UrlInvokerMap</span>.put(key, invoker);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    keys.clear();</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span><span class="type">UrlInvokerMap</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里返回的是<code>Map&lt;String, Invoker&lt;T&gt;&gt;</code>的map对象，由<code>invoker = new InvokerDelegete&lt;T&gt;(protocol.refer(serviceType, url), url, providerUrl)</code>方法创建</p>
+<p>这里的<code>protocol</code>同样由SPI机制创建，最终该<code>refer</code>方法会由<code>DubboProtocol</code>实现，来看一下</p>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public <span class="params">&lt;T&gt;</span> Invoker<span class="params">&lt;T&gt;</span> refer(Class<span class="params">&lt;T&gt;</span> serviceType, URL url) throws <span class="class">RpcException </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// modified by lishen</span></span><br><span class="line">    optimizeSerialization(url);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// create rpc invoker.</span></span><br><span class="line">    DubboInvoker<span class="params">&lt;T&gt;</span> invoker = new DubboInvoker<span class="params">&lt;T&gt;</span>(serviceType, url, getClients(url), invokers);</span><br><span class="line">    invokers.add(invoker);</span><br><span class="line">    return invoker;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到创建的是一个<code>DubboInvoker</code>的对象，这个对象中是存有和服务提供方的连接的，由<code>getClients(url)</code>方法得到</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">private ExchangeClient[] getClients(URL <span class="built_in">url</span>)&#123;</span><br><span class="line">    <span class="comment">//是否共享连接</span></span><br><span class="line">    boolean service_share_connect = <span class="literal">false</span>;</span><br><span class="line">    <span class="built_in">int</span> connections = <span class="built_in">url</span>.getParameter(Constants.CONNECTIONS_KEY, <span class="number">0</span>);</span><br><span class="line">    <span class="comment">//如果connections不配置，则共享连接，否则每服务每连接</span></span><br><span class="line">    <span class="keyword">if</span> (connections == <span class="number">0</span>)&#123;</span><br><span class="line">        service_share_connect = <span class="literal">true</span>;</span><br><span class="line">        connections = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    ExchangeClient[] clients = <span class="keyword">new</span> ExchangeClient[connections];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; clients.length; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (service_share_connect)&#123;</span><br><span class="line">            clients[i] = getSharedClient(<span class="built_in">url</span>);</span><br><span class="line">        &#125; <span class="title">else</span> &#123;</span><br><span class="line">            clients[i] = initClient(<span class="built_in">url</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> clients;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>返回值是<code>ExchangeClient[]</code>类型的，初始化由<code>initClient(url)</code>方法创建，默认的底层连接实现是通过Netty的，为了控制篇幅这里就不深入具体连接的细节了，有机会单开一篇讲一下。</p>
+<p>继续跳转回<code>ReferenceConfig</code>的<code>createProxy</code>方法，到此<code>refprotocol.refer(interfaceClass, urls.get(0))</code>就解析完了接着看后续的代码</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (registryURL != <span class="literal">null</span>) &#123; <span class="comment">// 有 注册中心协议的URL</span></span><br><span class="line">    <span class="comment">// 对有注册中心的Cluster 只用 AvailableCluster</span></span><br><span class="line">    URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME); </span><br><span class="line">    invoker = cluster.<span class="keyword">join</span>(<span class="keyword">new</span> StaticDirectory(u, invokers));</span><br><span class="line">&#125;  <span class="keyword">else</span> &#123; <span class="comment">// 不是 注册中心的URL</span></span><br><span class="line">    invoker = cluster.<span class="keyword">join</span>(<span class="keyword">new</span> StaticDirectory(invokers));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>cluster</code>对象之前也提过了，同样是SPI机制管理的，从其选项<code>failover</code>、<code>failfast</code>及<code>failback</code>等基本就可以推测出来这个对象和接口的负载均衡机制有关，以默认的<code>FailoverCluster</code>类为例，来看一下<code>join</code>方法</p>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public <span class="params">&lt;T&gt;</span> Invoker<span class="params">&lt;T&gt;</span> join(Directory<span class="params">&lt;T&gt;</span> directory) throws <span class="class">RpcException </span>&#123;</span><br><span class="line">    return new FailoverClusterInvoker<span class="params">&lt;T&gt;</span>(directory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>没有做什么特别得事情，就是根据<code>invokers</code>合并生成一个<code>FailoverClusterInvoker</code>类型的<code>invoker</code>对象给消费者。</p>
+<p>最后来看<code>proxyFactory.getProxy(invoker)</code>方法，前面已经提过了<code>proxyFactory</code>对象的具体实现在<code>JavassistProxyFactory</code>中，来看一下这个类</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">JavassistProxyFactory</span> <span class="keyword">extends</span> <span class="title">AbstractProxyFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    public &lt;<span class="type">T</span>&gt; <span class="type">T</span> getProxy(<span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; invoker, <span class="type">Class</span>&lt;?&gt;[] interfaces) &#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="type">T</span>) <span class="type">Proxy</span>.getProxy(interfaces).newInstance(<span class="keyword">new</span> <span class="type">InvokerInvocationHandler</span>(invoker));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public &lt;<span class="type">T</span>&gt; <span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; getInvoker(<span class="type">T</span> proxy, <span class="type">Class</span>&lt;<span class="type">T</span>&gt; <span class="class"><span class="keyword">type</span>, <span class="title">URL</span> <span class="title">url</span>) </span>&#123;</span><br><span class="line">        <span class="comment">// TODO Wrapper类不能正确处理带$的类名</span></span><br><span class="line">        <span class="keyword">final</span> <span class="type">Wrapper</span> wrapper = <span class="type">Wrapper</span>.getWrapper(proxy.getClass().getName().indexOf('$') &lt; <span class="number">0</span> ? proxy.getClass() : <span class="class"><span class="keyword">type</span>)</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">AbstractProxyInvoker</span>&lt;<span class="type">T</span>&gt;(proxy, <span class="class"><span class="keyword">type</span>, <span class="title">url</span>) </span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">protected</span> <span class="type">Object</span> doInvoke(<span class="type">T</span> proxy, <span class="type">String</span> methodName, </span><br><span class="line">                                      <span class="type">Class</span>&lt;?&gt;[] parameterTypes, </span><br><span class="line">                                      <span class="type">Object</span>[] arguments) <span class="keyword">throws</span> <span class="type">Throwable</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这里我们并没有发现<code>getProxy(Invoker&lt;T&gt; invoker)</code>的方法，那么往父类去找，果然在<code>AbstractProxyFactory</code>类中找到了，我们来看一下</p>
+<figure class="highlight monkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractProxyFactory</span> <span class="keyword">implements</span> <span class="title">ProxyFactory</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T getProxy(Invoker&lt;T&gt; invoker) throws RpcException &#123;</span><br><span class="line">        <span class="class"><span class="keyword">Class</span>&lt;?&gt;[] <span class="title">interfaces</span> = <span class="title">null</span>;</span></span><br><span class="line">        String config = invoker.getUrl().getParameter(<span class="string">"interfaces"</span>);</span><br><span class="line">        <span class="keyword">if</span> (config != <span class="literal">null</span> &amp;&amp; config.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            String[] types = Constants.COMMA_SPLIT_PATTERN.split(config);</span><br><span class="line">            <span class="keyword">if</span> (types != <span class="literal">null</span> &amp;&amp; types.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                interfaces = <span class="keyword">new</span> <span class="class"><span class="keyword">Class</span>&lt;?&gt;[<span class="title">types</span>.<span class="title">length</span> + 2];</span></span><br><span class="line">                interfaces[<span class="number">0</span>] = invoker.getInterface();</span><br><span class="line">                interfaces[<span class="number">1</span>] = EchoService.class;</span><br><span class="line">                <span class="keyword">for</span> (int i = <span class="number">0</span>; i &lt; types.length; i ++) &#123;</span><br><span class="line">                    interfaces[i + <span class="number">1</span>] = ReflectUtils.forName(types[i]);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (interfaces == <span class="literal">null</span>) &#123;</span><br><span class="line">            interfaces = <span class="keyword">new</span> <span class="class"><span class="keyword">Class</span>&lt;?&gt;[] &#123;<span class="title">invoker</span>.<span class="title">getInterface</span>(), <span class="title">EchoService</span>.<span class="title">class</span>&#125;;</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> getProxy(invoker, interfaces);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> &lt;T&gt; T getProxy(Invoker&lt;T&gt; invoker, <span class="class"><span class="keyword">Class</span>&lt;?&gt;[] <span class="title">types</span>);</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从这里可以看到单参的<code>getProxy</code>方法中调用了双参的<code>getProxy</code>方法，该方法的具体实现又要根据子类来定，这又是一个经典的模板模式实现。</p>
+<p>回过头看<code>JavassistProxyFactory</code>中的<code>getProxy</code>方法，这里涉及到了Javassist字节码技术，所以光看这个类的getProxy方法可能会有些看不懂，那么我们来看看另一个同样继承了<code>AbstractProxyFactory</code>类的工厂类<code>JdkProxyFactory</code></p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">JdkProxyFactory</span> <span class="keyword">extends</span> <span class="title">AbstractProxyFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    public &lt;<span class="type">T</span>&gt; <span class="type">T</span> getProxy(<span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; invoker, <span class="type">Class</span>&lt;?&gt;[] interfaces) &#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="type">T</span>) <span class="type">Proxy</span>.newProxyInstance(<span class="type">Thread</span>.currentThread().getContextClassLoader(), interfaces, <span class="keyword">new</span> <span class="type">InvokerInvocationHandler</span>(invoker));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public &lt;<span class="type">T</span>&gt; <span class="type">Invoker</span>&lt;<span class="type">T</span>&gt; getInvoker(<span class="type">T</span> proxy, <span class="type">Class</span>&lt;<span class="type">T</span>&gt; <span class="class"><span class="keyword">type</span>, <span class="title">URL</span> <span class="title">url</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">AbstractProxyInvoker</span>&lt;<span class="type">T</span>&gt;(proxy, <span class="class"><span class="keyword">type</span>, <span class="title">url</span>) </span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">protected</span> <span class="type">Object</span> doInvoke(<span class="type">T</span> proxy, <span class="type">String</span> methodName, </span><br><span class="line">                                      <span class="type">Class</span>&lt;?&gt;[] parameterTypes, </span><br><span class="line">                                      <span class="type">Object</span>[] arguments) <span class="keyword">throws</span> <span class="type">Throwable</span> &#123;</span><br><span class="line">                <span class="type">Method</span> method = proxy.getClass().getMethod(methodName, parameterTypes);</span><br><span class="line">                <span class="keyword">return</span> method.invoke(proxy, arguments);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到这个类的<code>getProxy</code>方法就很熟悉了，这就是标准的jdk的动态代理的实现，也就是说该方法返回的对象被<code>InvokerInvocationHandler</code>类代理了。由此我们推断，<code>JavassistProxyFactory</code>中的<code>getProxy</code>也是起到了动态代理的效果。也就是说我们对<code>invoker</code>的调用都会被代理类<code>InvokerInvocationHandler</code>所代理。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>消费者初始化的流程非常长，但其实概括一下一共是做了三件事：</p>
+<ul>
+<li>监听注册中心</li>
+<li>连接服务提供者端进行服务引用</li>
+<li>创建服务代理并返回</li>
+</ul>
+<p>当然因为篇幅缘故很多细节没有写到位，不过大致的脉络应该是都没有落下了，这次的写作让我又一次对框架的开发者肃然起敬。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dubbo/" rel="tag"># dubbo</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/08/code_sum/" rel="next" title="两数之和">
+                <i class="fa fa-chevron-left"></i> 两数之和
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/07/08/dubbo4/" rel="prev" title="Dubbo消费者调用过程源码解析">
+                Dubbo消费者调用过程源码解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码分析"><span class="nav-number">2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>
