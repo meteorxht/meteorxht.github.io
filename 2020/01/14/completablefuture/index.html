@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.5.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.5.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.5.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.5.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.5.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="说明CompletableFuture是JDK8中新增加的工具类，该类提供了丰富的API用于异步编程，根据作用不同，对应的方法可以被分为以下几个不同系列。 对象创建123public static &amp;lt;U&amp;gt; CompletableFuture&amp;lt;U&amp;gt; supplyAsync(Supplier&amp;lt;U&amp;gt; supplier)public static &amp;lt;U&amp;gt; C">
+<meta name="keywords" content="CompletableFuture">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CompletableFuture使用说明">
+<meta property="og:url" content="http://yoursite.com/2020/01/14/completablefuture/index.html">
+<meta property="og:site_name" content="映月台">
+<meta property="og:description" content="说明CompletableFuture是JDK8中新增加的工具类，该类提供了丰富的API用于异步编程，根据作用不同，对应的方法可以被分为以下几个不同系列。 对象创建123public static &amp;lt;U&amp;gt; CompletableFuture&amp;lt;U&amp;gt; supplyAsync(Supplier&amp;lt;U&amp;gt; supplier)public static &amp;lt;U&amp;gt; C">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2020-01-14T12:59:30.933Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CompletableFuture使用说明">
+<meta name="twitter:description" content="说明CompletableFuture是JDK8中新增加的工具类，该类提供了丰富的API用于异步编程，根据作用不同，对应的方法可以被分为以下几个不同系列。 对象创建123public static &amp;lt;U&amp;gt; CompletableFuture&amp;lt;U&amp;gt; supplyAsync(Supplier&amp;lt;U&amp;gt; supplier)public static &amp;lt;U&amp;gt; C">
+
+
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/01/14/completablefuture/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>CompletableFuture使用说明 | 映月台</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">映月台</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">等到风景都看透</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-star">
+    <a href="/star/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-star"></i> <br>日记</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/14/completablefuture/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">CompletableFuture使用说明
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-01-14 20:54:59" itemprop="dateCreated datePublished" datetime="2020-01-14T20:54:59+08:00">2020-01-14</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JDK8/" itemprop="url" rel="index"><span itemprop="name">JDK8</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2020/01/14/completablefuture/" class="leancloud_visitors" data-flag-title="CompletableFuture使用说明">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h4><p><code>CompletableFuture</code>是JDK8中新增加的工具类，该类提供了丰富的API用于异步编程，根据作用不同，对应的方法可以被分为以下几个不同系列。</p>
+<h4 id="对象创建"><a href="#对象创建" class="headerlink" title="对象创建"></a>对象创建</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public static <span class="tag">&lt;<span class="name">U</span>&gt;</span> CompletableFuture<span class="tag">&lt;<span class="name">U</span>&gt;</span> supplyAsync(Supplier<span class="tag">&lt;<span class="name">U</span>&gt;</span> supplier)</span><br><span class="line"></span><br><span class="line">public static <span class="tag">&lt;<span class="name">U</span>&gt;</span> CompletableFuture<span class="tag">&lt;<span class="name">U</span>&gt;</span> supplyAsync(Supplier<span class="tag">&lt;<span class="name">U</span>&gt;</span> supplier,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这两个方法都用于创建<code>CompletableFuture</code>对象，唯一不同是前一个方法统一使用一个公共的<code>ForkJoinPool</code>线程池，这个线程池默认创建的线程数是CPU的核数，大量调用该方法可能会造成线程池资源耗尽，而后一个方法自己传入指定的线程池，行为更可控。</p>
+<p>这里传入的主要参数是<code>Supplier&lt;U&gt;</code>类型的，因此传入的表达式必须是没有入参的。在创建完<code>CompletableFuture</code>对象之后，会自动地异步执行<code>supplier</code>的<code>get</code>方法。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; runAsync(Runnable runnable)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; runAsync(Runnable runnable,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这一组方法与上面一组的区别是，在创建完<code>CompletableFuture</code>对象之后，会自动地异步执行<code>runnable</code>对象的<code>run</code>方法，而<code>run</code>方法是没有返回值的。</p>
+<h4 id="描述串行关系"><a href="#描述串行关系" class="headerlink" title="描述串行关系"></a>描述串行关系</h4><figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenApply(<span class="function"><span class="keyword">Function</span></span>&lt;? super T,? <span class="keyword">extends</span> U&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenApplyAsync(<span class="function"><span class="keyword">Function</span></span>&lt;? super T,? <span class="keyword">extends</span> U&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenApplyAsync(<span class="function"><span class="keyword">Function</span></span>&lt;? super T,? <span class="keyword">extends</span> U&gt; fn, Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这一组<code>thenApply</code>方法传入参数为<code>Function&lt;T,U&gt;</code>类型，因此表达式支持<code>T</code>类型的入参和<code>U</code>类型的出参，其中入参即为上一个<code>CompletableFuture</code>流程的结果。而三个方法之间的差异很容易看出来，有<code>Async</code>后缀则异步执行，否则同步执行，后续不再对此差异做说明。值得一提的是这里默认的线程池依然是那个<code>ForkJoinPool</code>的公共线程池。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAccept(Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAcceptAsync(Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAcceptAsync(Consumer&lt;? <span class="keyword">super</span> T&gt; action,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这一组<code>thenAccept</code>与其他组的差异是入参为<code>Consumer&lt;T&gt;</code>类型，即表达式的入参<code>T</code>类型，无返回值。</p>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;Void&gt; thenRun(Runnable <span class="keyword">action</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;Void&gt; thenRunAsync(Runnable <span class="keyword">action</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;Void&gt; thenRunAsync(Runnable <span class="keyword">action</span>,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这一组<code>thenRun</code>与其他组的差异是入参为<code>Runnable</code>类型，即表达式没有入参，也没有返回值。</p>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenCompose(<span class="function"><span class="keyword">Function</span></span>&lt;? super T, ? <span class="keyword">extends</span> CompletionStage&lt;U&gt;&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenComposeAsync(<span class="function"><span class="keyword">Function</span></span>&lt;? super T, ? <span class="keyword">extends</span> CompletionStage&lt;U&gt;&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; thenComposeAsync(<span class="function"><span class="keyword">Function</span></span>&lt;? super T, ? <span class="keyword">extends</span> CompletionStage&lt;U&gt;&gt; fn,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>这一组<code>thenCompose</code>和<code>thenApply</code>比较相似，都是传入的<code>Function</code>对象，差异是<code>thenCompose</code>传入表达式的返回值是另一个<code>CompletableFuture</code>对象，因此适用于两个<code>CompletableFuture</code>流程的连接。</p>
+<h4 id="AND关系"><a href="#AND关系" class="headerlink" title="AND关系"></a>AND关系</h4><figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombine(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiFunction&lt;? <span class="keyword">super</span> T,? <span class="keyword">super</span> U,? <span class="keyword">extends</span> V&gt; fn) </span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombineAsync(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiFunction&lt;? <span class="keyword">super</span> T,? <span class="keyword">super</span> U,? <span class="keyword">extends</span> V&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombineAsync(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiFunction&lt;? <span class="keyword">super</span> T,? <span class="keyword">super</span> U,? <span class="keyword">extends</span> V&gt; fn, Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>该系列方法用于对调用者和<code>other</code>两者的结果进行汇聚关系的操作，<code>thenCombine</code>这一组与其他组的区别在于入参为<code>BiFunction&lt;T,U,V&gt;</code>对象，即表达式既有入参，也有类型为<code>V</code>的返回值，其中两个入参分别为上一个<code>CompletableFuture</code>流程和<code>other</code>的结果。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAcceptBoth(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> U&gt; action) </span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAcceptBothAsync(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> U&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;<span class="keyword">Void</span>&gt; thenAcceptBothAsync(CompletionStage&lt;? <span class="keyword">extends</span> U&gt; other,BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> U&gt; action, Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p><code>thenAcceptBoth</code>这一组与其他组的区别在于入参为<code>BiConsumer&lt;T,U&gt;</code>类型，即表达式有入参无返回值。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public CompletableFuture<span class="tag">&lt;<span class="name">Void</span>&gt;</span> runAfterBoth(CompletionStage<span class="php"><span class="meta">&lt;?</span>&gt; other,Runnable action)</span></span><br><span class="line"><span class="php"></span></span><br><span class="line"><span class="php"><span class="keyword">public</span> CompletableFuture&lt;Void&gt; runAfterBothAsync(CompletionStage<span class="meta">&lt;?</span>&gt;</span> other,Runnable action)</span><br><span class="line"></span><br><span class="line">public CompletableFuture<span class="tag">&lt;<span class="name">Void</span>&gt;</span> runAfterBothAsync(CompletionStage<span class="php"><span class="meta">&lt;?</span>&gt; other,Runnable action,Executor executor)</span></span><br></pre></td></tr></table></figure>
+
+<p><code>runAfterBoth</code>这一组与其他组的区别在于入参为<code>Runnable</code>类型，即表达式没有入参也没有返回值。</p>
+<h4 id="OR关系"><a href="#OR关系" class="headerlink" title="OR关系"></a>OR关系</h4><figure class="highlight bnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public <span class="attribute">&lt;U&gt;</span> CompletableFuture<span class="attribute">&lt;U&gt;</span> applyToEither(CompletionStage<span class="attribute">&lt;? extends T&gt;</span> other, Function<span class="attribute">&lt;? super T, U&gt;</span> fn)</span><br><span class="line"></span><br><span class="line">public <span class="attribute">&lt;U&gt;</span> CompletableFuture<span class="attribute">&lt;U&gt;</span> applyToEitherAsync(CompletionStage<span class="attribute">&lt;? extends T&gt;</span> other, Function<span class="attribute">&lt;? super T, U&gt;</span> fn)</span><br><span class="line"></span><br><span class="line">public <span class="attribute">&lt;U&gt;</span> CompletableFuture<span class="attribute">&lt;U&gt;</span> applyToEitherAsync(CompletionStage<span class="attribute">&lt;? extends T&gt;</span> other, Function<span class="attribute">&lt;? super T, U&gt;</span> fn,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p>该系列方法取调用者和<code>other</code>对象完成任务较快的那个线程进行后续处理。具体到<code>applyToEither</code>这一组和其他组的区别在于入参<code>Function&lt;T, U&gt;</code>，即表达式有<code>T</code>类型入参和<code>U</code>类型返回值，其中入参就是较快完成的那个<code>CompletableFuture</code>流程的结果。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; acceptEither(CompletionStage&lt;? <span class="keyword">extends</span> T&gt; other, Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; acceptEitherAsync(CompletionStage&lt;? <span class="keyword">extends</span> T&gt; other, Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;<span class="keyword">Void</span>&gt; acceptEitherAsync(CompletionStage&lt;? <span class="keyword">extends</span> T&gt; other, Consumer&lt;? <span class="keyword">super</span> T&gt; action,Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p><code>acceptEither</code>这一组和其他组的区别在于入参类型<code>Consumer&lt;T&gt;</code>，即表达式有<code>T</code>类型入参，没有返回值。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public CompletableFuture<span class="tag">&lt;<span class="name">Void</span>&gt;</span> runAfterEither(CompletionStage<span class="php"><span class="meta">&lt;?</span>&gt; other,Runnable action)</span></span><br><span class="line"><span class="php"></span></span><br><span class="line"><span class="php"><span class="keyword">public</span> CompletableFuture&lt;Void&gt; runAfterEitherAsync(CompletionStage<span class="meta">&lt;?</span>&gt;</span> other,Runnable action) </span><br><span class="line"></span><br><span class="line">public CompletableFuture<span class="tag">&lt;<span class="name">Void</span>&gt;</span> runAfterEitherAsync(CompletionStage<span class="php"><span class="meta">&lt;?</span>&gt; other,Runnable action,Executor executor)</span></span><br></pre></td></tr></table></figure>
+
+<p><code>runAfterEither</code>这一组和其他组的区别在于入参类型<code>Runnable</code>，即表达式没有入参也没有返回值。</p>
+<h4 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h4><figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; exceptionally(<span class="function"><span class="keyword">Function</span></span>&lt;Throwable, ? <span class="keyword">extends</span> T&gt; fn)</span><br></pre></td></tr></table></figure>
+
+<p>当遇到处理异常时，可以在<code>exceptionally</code>内处理异常，入参为<code>Function&lt;Throwable,T&gt;</code>，即表达式的入参为异常对象且可以返回<code>T</code>类型返回值。该方法作用类似同步编程的<code>catch</code>。</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; whenComplete(BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> Throwable&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; whenCompleteAsync(BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> Throwable&gt; action)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; whenCompleteAsync(BiConsumer&lt;? <span class="keyword">super</span> T, ? <span class="keyword">super</span> Throwable&gt; action, Executor executor)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; handle(BiFunction&lt;? <span class="keyword">super</span> T, Throwable, ? <span class="keyword">extends</span> U&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; handleAsync(BiFunction&lt;? <span class="keyword">super</span> T, Throwable, ? <span class="keyword">extends</span> U&gt; fn)</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;U&gt; CompletableFuture&lt;U&gt; handleAsync(BiFunction&lt;? <span class="keyword">super</span> T, Throwable, ? <span class="keyword">extends</span> U&gt; fn, Executor executor)</span><br></pre></td></tr></table></figure>
+
+<p><code>whenComplete</code>和<code>handle</code>两组的作用都类似同步编程的<code>finally</code>，因此无论是否发生异常都会执行这两组中的方法，两组区别在于入参<code>BiConsumer&lt;T,Throwable&gt;</code>和<code>BiFunction&lt;T, Throwable, U&gt;</code>，前者的表达式没有返回值，而后者的表达式是有类型<code>U</code>的返回值的。</p>
+<h4 id="多流程处理"><a href="#多流程处理" class="headerlink" title="多流程处理"></a>多流程处理</h4><figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public static CompletableFuture<span class="variable">&lt;Void&gt;</span> <span class="literal">all</span>Of(CompletableFuture<span class="variable">&lt;?&gt;</span>... cfs)</span><br><span class="line"></span><br><span class="line">public static CompletableFuture<span class="variable">&lt;Object&gt;</span> <span class="literal">any</span>Of(CompletableFuture<span class="variable">&lt;?&gt;</span>... cfs)</span><br></pre></td></tr></table></figure>
+
+<p>而<code>allOf</code>和<code>anyOf</code>可以处理多个流程的执行状态，<code>allOf</code>在所有流程完成后返回一个新建的<code>CompletableFuture&lt;Void&gt;</code>对象，<code>anyOf</code>只要有一个流程返回则返回该流程的结果。</p>
+<h4 id="获取结果"><a href="#获取结果" class="headerlink" title="获取结果"></a>获取结果</h4><figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> T <span class="built_in">get</span>() <span class="keyword">throws</span> InterruptedException, ExecutionException</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> T <span class="built_in">get</span>(<span class="keyword">long</span> timeout, TimeUnit unit) <span class="keyword">throws</span> InterruptedException, ExecutionException, TimeoutException</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> T <span class="built_in">join</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> T getNow(T valueIfAbsent)</span><br></pre></td></tr></table></figure>
+
+<p><code>get()</code>方法会阻塞直到返回执行结果，除了<code>future</code>执行异常会抛出<code>ExecutionException</code>，线程中断抛出<code>InterruptedException</code>外，<code>future</code>被取消的话还会抛出运行时异常<code>CancellationException</code>。</p>
+<p><code>get(long timeout, TimeUnit unit)</code>增加了超时时间作为入参，因此达到指定时间还会抛出<code>TimeoutException</code>。</p>
+<p><code>join()</code>与<code>get()</code>的区别在于抛出的都是运行时异常，计算被取消抛出的是<code>CancellationException</code>，<code>future</code>已经完成并抛出异常则该方法会抛出<code>CompletionException</code>。</p>
+<p><code>getNow(T valueIfAbsent)</code>方法在<code>join</code>基础上增加了入参<code>valueIfAbsent</code>，若调用该方法时<code>future</code>并未完成则会立刻返回<code>valueIfAbsent</code>。</p>
+<h4 id="代码示例"><a href="#代码示例" class="headerlink" title="代码示例"></a>代码示例</h4><figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">Main</span> &#123;</span></span><br><span class="line">    public static <span class="literal">void</span> main(String[] args) throws Exception &#123;</span><br><span class="line">        <span class="regexp">// 第一个任务:</span></span><br><span class="line"><span class="regexp">        CompletableFuture&lt;String&gt; cfQuery = CompletableFuture.supplyAsync(() -&gt; &#123;</span></span><br><span class="line"><span class="regexp">            return queryCode("中国石油");</span></span><br><span class="line"><span class="regexp">        &#125;);</span></span><br><span class="line"><span class="regexp">        //</span> cfQuery成功后继续执行下一个任务:</span><br><span class="line">        CompletableFuture&lt;Double&gt; cfFetch = cfQuery.thenApplyAsync<span class="function"><span class="params">((code) -&gt; &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">return</span> fetchPrice(code);</span></span></span><br><span class="line"><span class="function"><span class="params">        &#125;)</span>;</span></span><br><span class="line"><span class="function">        // <span class="title">cfFetch</span>成功后打印结果:</span></span><br><span class="line"><span class="function">        <span class="title">cfFetch</span>.<span class="title">thenAccept</span><span class="params">((result) -&gt; &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">            System.out.println(<span class="string">"price: "</span> + result);</span></span></span><br><span class="line"><span class="function"><span class="params">        &#125;)</span>;</span></span><br><span class="line"><span class="function">        // 主线程不要立刻结束，否则<span class="title">CompletableFuture</span>默认使用的线程池会立刻关闭:</span></span><br><span class="line"><span class="function">        <span class="title">Thread</span>.<span class="title">sleep</span><span class="params">(<span class="number">2000</span>)</span>;</span></span><br><span class="line"><span class="function">    &#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">    <span class="title">static</span> <span class="title">String</span> <span class="title">queryCode</span><span class="params">(String name)</span> &#123;</span></span><br><span class="line"><span class="function">        <span class="title">try</span> &#123;</span></span><br><span class="line"><span class="function">            <span class="title">Thread</span>.<span class="title">sleep</span><span class="params">(<span class="number">500</span>)</span>;</span></span><br><span class="line"><span class="function">        &#125; <span class="title">catch</span> <span class="params">(InterruptedException e)</span> &#123;</span></span><br><span class="line"><span class="function">        &#125;</span></span><br><span class="line"><span class="function">        <span class="title">return</span> "601857";</span></span><br><span class="line"><span class="function">    &#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">    <span class="title">static</span> <span class="title">Double</span> <span class="title">fetchPrice</span><span class="params">(String code)</span> &#123;</span></span><br><span class="line"><span class="function">        <span class="title">try</span> &#123;</span></span><br><span class="line"><span class="function">            <span class="title">Thread</span>.<span class="title">sleep</span><span class="params">(<span class="number">500</span>)</span>;</span></span><br><span class="line"><span class="function">        &#125; <span class="title">catch</span> <span class="params">(InterruptedException e)</span> &#123;</span></span><br><span class="line"><span class="function">        &#125;</span></span><br><span class="line"><span class="function">        <span class="title">return</span> 5 + <span class="title">Math</span>.<span class="title">random</span><span class="params">()</span> * 20;</span></span><br><span class="line"><span class="function">    &#125;</span></span><br><span class="line"><span class="function">&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CompletableFuture/" rel="tag"># CompletableFuture</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/12/rocketmq1/" rel="next" title="Rocketmq系列之NameServer源码解析">
+                <i class="fa fa-chevron-left"></i> Rocketmq系列之NameServer源码解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="meteorxht">
+            
+              <p class="site-author-name" itemprop="name">meteorxht</p>
+              <p class="site-description motion-element" itemprop="description">现就职于杭州，一个立志成为架构师的男人</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">23</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/meteorxht" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:meteor-xht@163.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.jianshu.com/u/ea1aba5fafd6" target="_blank" title="Jianshu"><i class="fa fa-fw fa-book"></i>Jianshu</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#说明"><span class="nav-number">1.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#对象创建"><span class="nav-number">2.</span> <span class="nav-text">对象创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#描述串行关系"><span class="nav-number">3.</span> <span class="nav-text">描述串行关系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AND关系"><span class="nav-number">4.</span> <span class="nav-text">AND关系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#OR关系"><span class="nav-number">5.</span> <span class="nav-text">OR关系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#异常处理"><span class="nav-number">6.</span> <span class="nav-text">异常处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多流程处理"><span class="nav-number">7.</span> <span class="nav-text">多流程处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#获取结果"><span class="nav-number">8.</span> <span class="nav-text">获取结果</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#代码示例"><span class="nav-number">9.</span> <span class="nav-text">代码示例</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"> &copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-bolt"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">meteorxht</span>
+
+  
+
+  
+</div>
+
+
+
+<!--
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Gemini</a> v6.5.0</div>
+-->
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.5.0"></script>
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.5.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function ({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
+          }
+        })
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz")
+        .done(function ({ api_server }) {
+          var Counter = function (method, url, data) {
+            return $.ajax({
+              method: method,
+              url: `https://${api_server}/1.1${url}`,
+              headers: {
+                'X-LC-Id': "so0TFIeASddKn0zCebfJNwkh-gzGzoHsz",
+                'X-LC-Key': "JLKNsWA4kR8LIOxEqtOB3rXg",
+                'Content-Type': 'application/json',
+              },
+              data: data,
+            });
+          };
+          
+          addCount(Counter);
+          
+        })
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+</body>
+</html>
