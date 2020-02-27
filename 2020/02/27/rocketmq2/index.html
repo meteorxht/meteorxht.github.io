@@ -110,23 +110,27 @@
 
 
 
-  <meta name="description" content="现就职于杭州，一个立志成为架构师的男人">
-<meta property="og:type" content="website">
-<meta property="og:title" content="映月台">
-<meta property="og:url" content="http://yoursite.com/tags/mysql/index.html">
+  <meta name="description" content="共同点：对比这两种存储结构，它们有很多共通的地方，都是采用消息文件 + 索引文件的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。 差异点：Kafka：采用的是稀疏索引，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。 Kafka 的存储以Part">
+<meta name="keywords" content="rocketmq">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ和Kafka消息存储对比">
+<meta property="og:url" content="http://yoursite.com/2020/02/27/rocketmq2/index.html">
 <meta property="og:site_name" content="映月台">
-<meta property="og:description" content="现就职于杭州，一个立志成为架构师的男人">
+<meta property="og:description" content="共同点：对比这两种存储结构，它们有很多共通的地方，都是采用消息文件 + 索引文件的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。 差异点：Kafka：采用的是稀疏索引，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。 Kafka 的存储以Part">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/images/rocketmq.png">
+<meta property="og:updated_time" content="2020-02-27T09:56:50.990Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="映月台">
-<meta name="twitter:description" content="现就职于杭州，一个立志成为架构师的男人">
+<meta name="twitter:title" content="RocketMQ和Kafka消息存储对比">
+<meta name="twitter:description" content="共同点：对比这两种存储结构，它们有很多共通的地方，都是采用消息文件 + 索引文件的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。 差异点：Kafka：采用的是稀疏索引，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。 Kafka 的存储以Part">
+<meta name="twitter:image" content="http://yoursite.com/images/rocketmq.png">
 
 
 
 
 
 
-  <link rel="canonical" href="http://yoursite.com/tags/mysql/">
+  <link rel="canonical" href="http://yoursite.com/2020/02/27/rocketmq2/">
 
 
 
@@ -136,7 +140,7 @@
   };
 </script>
 
-  <title>标签: mysql | 映月台</title>
+  <title>RocketMQ和Kafka消息存储对比 | 映月台</title>
   
 
 
@@ -185,7 +189,7 @@
     
   
 
-  <div class="container sidebar-position-left ">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -234,7 +238,7 @@
         
         
           
-          <li class="menu-item menu-item-tags menu-item-active">
+          <li class="menu-item menu-item-tags">
     <a href="/tags/" rel="section">
       <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
   </li>
@@ -320,82 +324,206 @@
           
             
 
-    
-    
-      
-      
-    
-      
-      
-    
-      
-      
-    
-      
-      
-    
-      
-      
-    
-    
-
-  
-
-
           
           <div id="content" class="content">
             
 
-  
-  
-  
-  <div class="post-block tag">
+  <div id="posts" class="posts-expand">
+    
 
-    <div id="posts" class="posts-collapse">
-      <div class="collection-title">
-        <h1>mysql<small>标签</small>
-        </h1>
-      </div>
+  
 
-      
-        
+  
+  
+  
+
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/02/27/rocketmq2/">
 
-      <h2 class="post-title">
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="meteorxht">
+      <meta itemprop="description" content="现就职于杭州，一个立志成为架构师的男人">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="映月台">
+    </span>
+
+    
+      <header class="post-header">
+
         
-            <a class="post-title-link" href="/2020/01/07/mysql_lock/" itemprop="url">
-              
-                <span itemprop="name">mysql中的锁</span>
-              
-            </a>
         
-      </h2>
+          <h1 class="post-title" itemprop="name headline">RocketMQ和Kafka消息存储对比
+              
+            
+          </h1>
+        
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2020-01-07T20:40:57+08:00" content="2020-01-07">
-          01-07
-        </time>
-      </div>
+        <div class="post-meta">
+          <span class="post-time">
 
-    </header>
-  </article>
+            
+            
+            
 
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-27 17:47:29" itemprop="dateCreated datePublished" datetime="2020-02-27T17:47:29+08:00">2020-02-27</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/源码解析/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2020/02/27/rocketmq2/" class="leancloud_visitors" data-flag-title="RocketMQ和Kafka消息存储对比">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数：</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="/images/rocketmq.png" alt="image"></p>
+<h4 id="共同点："><a href="#共同点：" class="headerlink" title="共同点："></a>共同点：</h4><p>对比这两种存储结构，它们有很多共通的地方，都是采用<strong>消息文件 + 索引文件</strong>的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。<br>写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。</p>
+<h4 id="差异点："><a href="#差异点：" class="headerlink" title="差异点："></a>差异点：</h4><h5 id="Kafka："><a href="#Kafka：" class="headerlink" title="Kafka："></a>Kafka：</h5><p>采用的是<strong>稀疏索引</strong>，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。</p>
+<p>Kafka 的存储<strong>以Partition为单位</strong>，每个Partition包含一组消息文件（Segment file）和一组索引文件（Index），并且消息文件和索引文件一一对应，具有相同的文件名（但文件扩展名不一样），文件名就是这个文件中第一条消息的索引序号。<br>查找消息时，首先根据文件名找到所在的索引文件，然后用二分法遍历索引文件内的索引，在里面找到离目标消息最近的索引，再去消息文件中，找到这条最近的索引指向的消息位置，从这个位置开始顺序遍历消息文件，找到目标消息。<strong>寻址操作较耗时</strong>。</p>
+<h5 id="RocketMQ："><a href="#RocketMQ：" class="headerlink" title="RocketMQ："></a>RocketMQ：</h5><p>采用的是定长<strong>稠密索引</strong>，它为每一条消息都建立索引，每个索引的长度（注意不是消息长度）是固定的 20 个字节。</p>
+<p>RocketMQ的存储<strong>以Broker为单位</strong>。它的存储也是分为消息文件和索引文件，但是在RocketMQ中，每个Broker只有一组消息文件，它把在这个Broker上的所有主题的消息都存在这一组消息文件中。索引文件和Kafka一样，是按照主题和队列分别建立的，每个队列对应一组索引文件，这组索引文件在 RocketMQ 中称为 ConsumerQueue。<br>查找消息的时候，可以直接根据队列的消息序号，计算出索引的全局位置（索引序号 x 索引固定长度 20），然后直接读取这条索引，再根据索引中记录的消息的全局位置，找到消息。这里的两次都是绝对寻址，<strong>寻址速度很快</strong>。</p>
+<h4 id="优缺点分析："><a href="#优缺点分析：" class="headerlink" title="优缺点分析："></a>优缺点分析：</h4><p>在消息文件的存储粒度上，Kafka以分区为单位，粒度更细，优点是更加灵活，很容易进行数据迁移和扩容。RocketMQ以Broker为单位，较粗的粒度牺牲了灵活性，带来的好处是，在写入的时候，同时写入的文件更少，有更好的批量（不同主题和分区的数据可以组成一批一起写入），更多的顺序写入，尤其是在 Broker 上有很多主题和分区的情况下，有更好的写入性能。</p>
+<p>索引设计上，RocketMQ和Kafka分别采用了稠密和稀疏索引，<strong>稠密索引</strong>需要更多的存储空间，但查找性能更好，<strong>稀疏索引</strong>能节省一些存储空间，代价是牺牲了查找性能。<br>可以看到，两种消息队列在存储设计上，有不同的选择。</p>
+<p>大多数场景下，这两种存储设计的差异其实并不明显，都可以满足需求。但是在某些极限场景下，依然会体现出它们设计的差异。比如，在一个Broker上有上千个活动主题的情况下，RocketMQ的写入性能就会体现出优势。再比如，如果我们的消息都是几个、十几个字节的小消息，但是消息的数量很多，这时候Kafka的稀疏索引设计就能节省非常多的存储空间。</p>
 
       
     </div>
 
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/rocketmq/" rel="tag"># rocketmq</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/02/11/feign2/" rel="next" title="Feign调用流程解析">
+                <i class="fa fa-chevron-left"></i> Feign调用流程解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
   </div>
   
   
   
+  </article>
 
-  
+
+  </div>
 
 
           </div>
           
+
+  
+
+
 
         </div>
         
@@ -416,8 +544,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -560,6 +697,22 @@
       </section>
 
       
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#共同点："><span class="nav-number">1.</span> <span class="nav-text">共同点：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#差异点："><span class="nav-number">2.</span> <span class="nav-text">差异点：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Kafka："><span class="nav-number">2.1.</span> <span class="nav-text">Kafka：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RocketMQ："><span class="nav-number">2.2.</span> <span class="nav-text">RocketMQ：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#优缺点分析："><span class="nav-number">3.</span> <span class="nav-text">优缺点分析：</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
 
       
 
@@ -697,6 +850,10 @@
 
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.5.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.5.0"></script>
+
+
 
   
 
@@ -1051,43 +1208,42 @@
   
   <script>
     
-    function showTime(Counter) {
-      var entries = [];
+    function addCount(Counter) {
       var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
 
-      $visitors.each(function () {
-        entries.push( $(this).attr("id").trim() );
-      });
-
-      Counter('get', '/classes/Counter', { where: JSON.stringify({ url: { "$in": entries } }) })
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
         .done(function ({ results }) {
-          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
-
-          if (results.length === 0) {
-            $visitors.find(COUNT_CONTAINER_REF).text(0);
-            return;
-          }
-
-          for (var i = 0; i < results.length; i++) {
-            var item = results[i];
-            var url = item.url;
-            var time = item.time;
-            var element = document.getElementById(url);
-
-            $(element).find(COUNT_CONTAINER_REF).text(time);
-          }
-          for(var i = 0; i < entries.length; i++) {
-            var url = entries[i];
-            var element = document.getElementById(url);
-            var countSpan = $(element).find(COUNT_CONTAINER_REF);
-            if( countSpan.text() == '') {
-              countSpan.text(0);
-            }
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', `/classes/Counter/${counter.objectId}`, JSON.stringify({ time: { "__op":"Increment", "amount":1 } }))
+            
+            .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(counter.time + 1);
+            })
+            
+            .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+            })
+          } else {
+            
+              Counter('post', '/classes/Counter', JSON.stringify({ title: title, url: url, time: 1}))
+                .done(function () {
+                  var $element = $(document.getElementById(url));
+                  $element.find('.leancloud-visitors-count').text(1);
+                })
+                .fail(function () {
+                  console.log('Failed to create');
+                });
+            
           }
         })
-        .fail(function ({ responseJSON }) {
-          console.log("LeanCloud Counter Error: " + responseJSON.code + " " + responseJSON.error);
-        });
+      .fail(function ({ responseJSON }) {
+        console.log('LeanCloud Counter Error:' + responseJSON.code + " " + responseJSON.error);
+      });
     }
     
 
@@ -1107,9 +1263,7 @@
             });
           };
           
-          if ($('.post-title-link').length >= 1) {
-            showTime(Counter);
-          }
+          addCount(Counter);
           
         })
     });
