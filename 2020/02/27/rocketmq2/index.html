@@ -119,7 +119,7 @@
 <meta property="og:description" content="共同点：对比这两种存储结构，它们有很多共通的地方，都是采用消息文件 + 索引文件的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。 差异点：Kafka：采用的是稀疏索引，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。 Kafka 的存储以Part">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://yoursite.com/images/rocketmq.png">
-<meta property="og:updated_time" content="2020-02-27T09:56:50.990Z">
+<meta property="og:updated_time" content="2020-02-27T10:05:47.676Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="RocketMQ和Kafka消息存储对比">
 <meta name="twitter:description" content="共同点：对比这两种存储结构，它们有很多共通的地方，都是采用消息文件 + 索引文件的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。 差异点：Kafka：采用的是稀疏索引，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。 Kafka 的存储以Part">
@@ -449,7 +449,7 @@
       
 
       
-        <p><img src="/images/rocketmq.png" alt="image"></p>
+        <p><img src="/images/rocketmq.png" alt></p>
 <h4 id="共同点："><a href="#共同点：" class="headerlink" title="共同点："></a>共同点：</h4><p>对比这两种存储结构，它们有很多共通的地方，都是采用<strong>消息文件 + 索引文件</strong>的存储方式，索引文件的名字都是第一条消息的索引序号，索引中记录了消息的位置等等。<br>写入消息的时候，消息按照自然顺序追加写入到同一个消息文件中，一个文件写满了再写下一个文件。</p>
 <h4 id="差异点："><a href="#差异点：" class="headerlink" title="差异点："></a>差异点：</h4><h5 id="Kafka："><a href="#Kafka：" class="headerlink" title="Kafka："></a>Kafka：</h5><p>采用的是<strong>稀疏索引</strong>，为了节省存储空间，它不会为每一条消息都创建索引，而是每隔几条消息创建一条索引。</p>
 <p>Kafka 的存储<strong>以Partition为单位</strong>，每个Partition包含一组消息文件（Segment file）和一组索引文件（Index），并且消息文件和索引文件一一对应，具有相同的文件名（但文件扩展名不一样），文件名就是这个文件中第一条消息的索引序号。<br>查找消息时，首先根据文件名找到所在的索引文件，然后用二分法遍历索引文件内的索引，在里面找到离目标消息最近的索引，再去消息文件中，找到这条最近的索引指向的消息位置，从这个位置开始顺序遍历消息文件，找到目标消息。<strong>寻址操作较耗时</strong>。</p>
